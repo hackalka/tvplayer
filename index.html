@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>player tv</title>
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Font Awesome 6 (iconos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- TDLib para navegador (CDN confiable) -->
+    <script src="https://unpkg.com/@sayyid2112/tdweb@1.8.0/dist/tdweb.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="app-header">
+            <div class="logo">
+                <h1><i class="fab fa-telegram"></i> player tv</h1>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span id="connectionStatus">Inicializando...</span>
+            </div>
+        </div>
+
+        <!-- Pantalla de login (se muestra hasta autenticar) -->
+        <div id="loginZone" class="login-zone">
+            <div class="login-card">
+                <h2>Iniciar sesión</h2>
+                <input type="tel" id="phoneInput" placeholder="+34 666 111 222" autocomplete="off">
+                <div id="codeContainer" style="display:none;">
+                    <input type="text" id="codeInput" placeholder="Código de verificación">
+                </div>
+                <button id="authButton">Enviar número</button>
+            </div>
+        </div>
+
+        <!-- Panel principal (chats y mensajes) -->
+        <div id="mainApp" class="main-panel hide">
+            <div class="chats-sidebar">
+                <div class="chats-header"><i class="fa-regular fa-message"></i> MIS GRUPOS Y CANALES</div>
+                <div id="chatsListContainer">
+                    <div class="loading-placeholder">Cargando conversaciones...</div>
+                </div>
+            </div>
+            <div class="messages-area">
+                <div class="chat-header-detail" id="currentChatTitle">
+                    <i class="fa-regular fa-comment"></i> <span>Selecciona un chat</span>
+                </div>
+                <div id="messagesList" class="messages-list">
+                    <div class="empty-chat">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <p>Elige un canal o grupo para ver los mensajes</p>
+                    </div>
+                </div>
+                <div class="input-message" id="inputMessageContainer" style="display: none;">
+                    <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+                    <button id="sendMessageBtn"><i class="fa-regular fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Código JavaScript principal -->
+    <script src="js/telegram.js"></script>
+</body>
+</html>
