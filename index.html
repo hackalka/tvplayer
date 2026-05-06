@@ -3,231 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Client - Versión Simple</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/telegram@2.26.6/lib/gramjs.js"></script>
+    <title>Mi Cliente Telegram</title>
+    <!-- Estilos básicos para que se vea ordenado -->
     <style>
-        /* Estilos iguales a los anteriores, los omito por brevedad pero los mismos */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); color: #e0e0e0; height: 100vh; display: flex; justify-content: center; align-items: center; padding: 16px; }
-        .app-container { width: 100%; max-width: 1200px; height: 90vh; background: #141414; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.05); }
-        .app-header { background: rgba(0,0,0,0.7); padding: 18px 24px; border-bottom: 1px solid rgba(245,197,24,0.3); display: flex; justify-content: space-between; align-items: center; }
-        .logo h1 { font-size: 1.5rem; background: linear-gradient(135deg,#f5c518,#d4a017); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .status-badge { background: #2c2c2c; padding: 6px 14px; border-radius: 50px; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; }
-        .status-dot { width: 8px; height: 8px; background: #4caf50; border-radius: 50%; }
-        .login-zone { flex: 1; display: flex; justify-content: center; align-items: center; }
-        .login-card { background: #1e1e1e; padding: 35px; border-radius: 28px; width: 100%; max-width: 380px; text-align: center; border: 1px solid #333; }
-        .login-card h2 { color: #f5c518; margin-bottom: 25px; }
-        .login-card input { width: 100%; padding: 14px; margin-bottom: 18px; background: #2a2a2a; border: 1px solid #444; border-radius: 60px; color: white; font-size: 1rem; }
-        .login-card button { width: 100%; background: #f5c518; border: none; padding: 12px; border-radius: 60px; font-weight: bold; cursor: pointer; color: #000; }
-        .main-panel { flex: 1; display: flex; overflow: hidden; }
-        .chats-sidebar { width: 320px; background: #0e0e0e; border-right: 1px solid #2a2a2a; overflow-y: auto; }
-        .chats-header { padding: 15px 20px; font-weight: 600; border-bottom: 1px solid #252525; color: #f5c518; }
-        .chat-item { padding: 14px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #1e1e1e; cursor: pointer; }
-        .chat-item:hover { background: #202020; }
-        .chat-avatar { width: 48px; height: 48px; background: #2c2c2c; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #f5c518; }
-        .chat-info { flex: 1; }
-        .chat-name { font-weight: 600; }
-        .chat-last-msg { font-size: 0.7rem; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
-        .messages-area { flex: 1; display: flex; flex-direction: column; background: #101010; }
-        .chat-header-detail { padding: 15px 25px; background: #0a0a0a; border-bottom: 1px solid #262626; font-weight: 700; }
-        .messages-list { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .message-bubble { max-width: 75%; padding: 10px 16px; border-radius: 22px; background: #262626; align-self: flex-start; }
-        .message-bubble.outgoing { background: #f5c518; color: #0a0a0a; align-self: flex-end; }
-        .message-text { font-size: 0.9rem; }
-        .message-meta { font-size: 0.65rem; margin-top: 5px; opacity: 0.7; text-align: right; }
-        .input-message { padding: 15px 20px; background: #0a0a0a; border-top: 1px solid #262626; display: flex; gap: 12px; }
-        .input-message input { flex: 1; background: #2a2a2a; border: none; padding: 12px 18px; border-radius: 60px; color: white; }
-        .input-message button { background: #f5c518; border: none; width: 45px; border-radius: 60px; cursor: pointer; }
-        .empty-chat { display: flex; justify-content: center; align-items: center; height: 100%; color: #666; flex-direction: column; gap: 12px; }
-        .loading-placeholder { padding: 20px; text-align: center; color: #888; }
-        .hide { display: none !important; }
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: #1e1e1e; }
-        ::-webkit-scrollbar-thumb { background: #f5c518; border-radius: 5px; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #app {
+            background: #1e1e1e;
+            border-radius: 24px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 12px;
+            color: #f5c518;
+        }
+        .log {
+            background: #0a0a0a;
+            padding: 12px;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            margin-bottom: 16px;
+            border-left: 3px solid #f5c518;
+        }
+        button {
+            background: #f5c518;
+            color: #000;
+            border: none;
+            border-radius: 40px;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:active { transform: scale(0.98); }
+        input {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 40px;
+            padding: 10px 16px;
+            color: white;
+            width: 100%;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-<div class="app-container">
-    <div class="app-header">
-        <div class="logo"><h1><i class="fab fa-telegram"></i> MI CLIENTE</h1></div>
-        <div class="status-badge"><span class="status-dot"></span> <span id="connectionStatus">Cargando...</span></div>
+<div id="app">
+    <h2>🔐 Cliente Telegram</h2>
+    <div class="log" id="log">Cargando...</div>
+
+    <!-- Step 1: Phone number -->
+    <div id="stepPhone">
+        <input type="tel" id="phone" placeholder="+34600123456" value="+34">
+        <button id="btnPhone">Enviar número</button>
     </div>
-    <div id="loginZone" class="login-zone">
-        <div class="login-card">
-            <h2>Iniciar sesión</h2>
-            <input type="tel" id="phoneInput" placeholder="+34 666 111 222">
-            <button id="authButton">Conectar</button>
-        </div>
+
+    <!-- Step 2: OTP (solo si hace falta) -->
+    <div id="stepCode" class="hidden">
+        <input type="text" id="code" placeholder="Código de verificación">
+        <button id="btnCode">Verificar</button>
     </div>
-    <div id="mainApp" class="main-panel hide">
-        <div class="chats-sidebar">
-            <div class="chats-header">MIS CANALES Y GRUPOS</div>
-            <div id="chatsListContainer"><div class="loading-placeholder">Cargando...</div></div>
-        </div>
-        <div class="messages-area">
-            <div class="chat-header-detail" id="currentChatTitle">Selecciona un chat</div>
-            <div id="messagesList" class="messages-list"><div class="empty-chat">Elige un canal o grupo</div></div>
-            <div class="input-message" id="inputMessageContainer" style="display:none;"><input type="text" id="messageInput" placeholder="Mensaje..."><button id="sendMessageBtn"><i class="fa-regular fa-paper-plane"></i></button></div>
-        </div>
+
+    <!-- Step 3: 2FA (solo si hace falta) -->
+    <div id="step2fa" class="hidden">
+        <input type="password" id="password" placeholder="Contraseña de dos pasos">
+        <button id="btn2fa">Enviar contraseña</button>
+    </div>
+
+    <!-- Resultados -->
+    <div id="result" class="hidden">
+        <pre id="resultText"></pre>
+        <button id="reset">Cerrar sesión y volver</button>
     </div>
 </div>
-<script>
-    // ================= CONFIGURACIÓN =================
-    const API_ID = 8952741;            // TU API ID
-    const API_HASH = "693fb2da124662dad85b2b337c53a386";   // TU API HASH
-    // =================================================
+
+<!-- Cargar GramJS desde Skypack CDN -->
+<script type="module">
+    import { TelegramClient } from 'https://cdn.skypack.dev/telegram';
+
+    // 🔴 CAMBIA AQUÍ TUS CREDENCIALES
+    const API_ID = 8952741;          // <-- TU API ID (número entero)
+    const API_HASH = "693fb2da124662dad85b2b337c53a386";   // <-- TU API HASH (string)
+
+    // Elementos del DOM
+    const logDiv = document.getElementById('log');
+    const stepPhoneDiv = document.getElementById('stepPhone');
+    const stepCodeDiv = document.getElementById('stepCode');
+    const step2faDiv = document.getElementById('step2fa');
+    const resultDiv = document.getElementById('result');
+    const resultText = document.getElementById('resultText');
+    const resetBtn = document.getElementById('reset');
 
     let client = null;
-    let currentChatId = null;
-    let chatsMap = new Map();
-    let isAuthenticating = false;
+    let currentPhoneNumber = null;
 
-    // Elementos DOM
-    const loginZone = document.getElementById('loginZone');
-    const mainApp = document.getElementById('mainApp');
-    const phoneInput = document.getElementById('phoneInput');
-    const authButton = document.getElementById('authButton');
-    const connectionStatus = document.getElementById('connectionStatus');
-    const chatsListContainer = document.getElementById('chatsListContainer');
-    const messagesList = document.getElementById('messagesList');
-    const currentChatTitleSpan = document.getElementById('currentChatTitle');
-    const inputMessageContainer = document.getElementById('inputMessageContainer');
-    const messageInput = document.getElementById('messageInput');
-    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    function log(msg) {
+        const timestamp = new Date().toLocaleTimeString();
+        logDiv.innerHTML += `[${timestamp}] ${msg}\n`;
+        logDiv.scrollTop = logDiv.scrollHeight;
+        console.log(msg);
+    }
 
-    function updateStatus(msg) { connectionStatus.innerHTML = msg; }
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m==='&'?'&amp;': m==='<'?'&lt;':'&gt;'); }
+    // Función para ocultar/mostrar pasos
+    function setStep(step) {
+        stepPhoneDiv.classList.add('hidden');
+        stepCodeDiv.classList.add('hidden');
+        step2faDiv.classList.add('hidden');
+        if (step === 'phone') stepPhoneDiv.classList.remove('hidden');
+        if (step === 'code') stepCodeDiv.classList.remove('hidden');
+        if (step === '2fa') step2faDiv.classList.remove('hidden');
+    }
 
-    async function iniciarCliente() {
-        if (isAuthenticating) return;
-        isAuthenticating = true;
-        updateStatus("Conectando...");
-        
-        const { TelegramClient } = gramjs;
-        const StringSession = gramjs.StringSession;
-        client = new TelegramClient(new StringSession(""), API_ID, API_HASH, { connectionRetries: 5 });
-        
-        client.addEventHandler(async (update) => {
-            if (update.className === 'UpdateNewMessage') {
-                const msg = update.message;
-                if (currentChatId && msg.peerId?.channelId == currentChatId) {
-                    appendMessageGramJS(msg);
-                }
-                refreshChatsList();
-            }
-        });
-
-        try {
-            await client.start({
-                phoneNumber: async () => {
-                    return phoneInput.value.trim();
-                },
-                password: async () => {
-                    return prompt("Contraseña de dos pasos (si tienes):");
-                },
-                phoneCode: async () => {
-                    return prompt("Código de verificación que recibiste por SMS:");
-                },
-                onError: (err) => {
-                    console.error(err);
-                    updateStatus("Error: " + err.message);
-                    alert("Error: " + err.message);
-                }
-            });
-            updateStatus("Conectado");
-            loginZone.classList.add('hide');
-            mainApp.classList.remove('hide');
-            await refreshChatsList();
-        } catch (error) {
-            console.error(error);
-            updateStatus("Error de autenticación");
-            alert("No se pudo conectar: " + error.message);
-        } finally {
-            isAuthenticating = false;
+    // Inicialización del cliente
+    async function startClient() {
+        if (client) {
+            log("Cliente ya iniciado, cerrando sesión anterior...");
+            try { await client.disconnect(); } catch (e) {}
         }
+        log("Creando nuevo cliente Telegram...");
+        client = new TelegramClient(new (await import('https://cdn.skypack.dev/telegram/sessions')).StringSession(""), API_ID, API_HASH, { connectionRetries: 5 });
+        log("Cliente creado.");
     }
 
-    async function refreshChatsList() {
-        if (!client) return;
-        chatsListContainer.innerHTML = '<div class="loading-placeholder">Cargando chats...</div>';
-        try {
-            const dialogs = await client.getDialogs({ limit: 100 });
-            if (dialogs.length === 0) {
-                chatsListContainer.innerHTML = '<div class="loading-placeholder">No hay chats aún</div>';
-                return;
-            }
-            let html = '';
-            for (const dialog of dialogs) {
-                const id = dialog.id;
-                const title = dialog.title || "Sin título";
-                const lastMsg = dialog.message?.message || "";
-                chatsMap.set(id, dialog);
-                html += `<div class="chat-item" data-chat-id="${id}">
-                            <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
-                            <div class="chat-info">
-                                <div class="chat-name">${escapeHtml(title)}</div>
-                                <div class="chat-last-msg">${escapeHtml(lastMsg.substring(0, 50))}</div>
-                            </div>
-                        </div>`;
-            }
-            chatsListContainer.innerHTML = html;
-            document.querySelectorAll('.chat-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const chatId = parseInt(el.dataset.chatId);
-                    openChat(chatId);
-                });
-            });
-        } catch(e) { console.error(e); chatsListContainer.innerHTML = '<div>Error</div>'; }
-    }
-
-    async function openChat(chatId) {
-        currentChatId = chatId;
-        const dialog = chatsMap.get(chatId);
-        currentChatTitleSpan.innerText = dialog ? dialog.title : 'Chat';
-        inputMessageContainer.style.display = 'flex';
-        messagesList.innerHTML = '<div class="loading-placeholder">Cargando mensajes...</div>';
-        try {
-            const history = await client.getMessages(chatId, { limit: 50 });
-            messagesList.innerHTML = '';
-            if (history.length === 0) messagesList.innerHTML = '<div class="empty-chat">No hay mensajes</div>';
-            else history.reverse().forEach(msg => appendMessageGramJS(msg));
-        } catch(e) { messagesList.innerHTML = '<div>Error</div>'; }
-    }
-
-    function appendMessageGramJS(msg) {
-        const isOut = msg.out;
-        let text = msg.message || "[Mensaje]";
-        const date = new Date(msg.date * 1000);
-        const timeStr = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-        const div = document.createElement('div');
-        div.className = `message-bubble ${isOut ? 'outgoing' : ''}`;
-        div.innerHTML = `<div class="message-text">${escapeHtml(text)}</div><div class="message-meta">${timeStr}</div>`;
-        messagesList.appendChild(div);
-        messagesList.scrollTop = messagesList.scrollHeight;
-    }
-
-    async function sendCurrentMessage() {
-        if (!currentChatId || !client) return;
-        const text = messageInput.value.trim();
-        if (!text) return;
-        messageInput.value = '';
-        try {
-            await client.sendMessage(currentChatId, { message: text });
-        } catch(e) { console.error(e); }
-    }
-
-    authButton.addEventListener('click', () => {
-        if (!phoneInput.value.trim()) {
-            alert("Introduce tu número con código país (ej: +34666111222)");
+    // Envío del número de teléfono
+    document.getElementById('btnPhone').onclick = async () => {
+        const phone = document.getElementById('phone').value.trim();
+        if (!phone) {
+            log("❌ Introduce un número válido (con código país).");
             return;
         }
-        iniciarCliente();
-    });
-    sendMessageBtn.addEventListener('click', sendCurrentMessage);
-    messageInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendCurrentMessage(); });
-    updateStatus("Introduce tu número y pulsa Conectar");
+        currentPhoneNumber = phone;
+        log(`📞 Número ingresado: ${phone}`);
+        await startClient();
+        log("Solicitando código...");
+        try {
+            await client.start({
+                phoneNumber: async () => currentPhoneNumber,
+                password: async () => {
+                    log("⚠️ Se requiere contraseña de 2FA");
+                    setStep('2fa');
+                    return new Promise(resolve => {
+                        const send2fa = async () => {
+                            const pwd = document.getElementById('password').value;
+                            if (pwd) {
+                                document.getElementById('btn2fa').removeEventListener('click', send2fa);
+                                resolve(pwd);
+                            }
+                        };
+                        document.getElementById('btn2fa').onclick = send2fa;
+                    });
+                },
+                phoneCode: async () => {
+                    log("📨 Esperando código de verificación...");
+                    setStep('code');
+                    return new Promise(resolve => {
+                        const sendCode = async () => {
+                            const code = document.getElementById('code').value;
+                            if (code) {
+                                document.getElementById('btnCode').removeEventListener('click', sendCode);
+                                resolve(code);
+                            }
+                        };
+                        document.getElementById('btnCode').onclick = sendCode;
+                    });
+                },
+                onError: (err) => {
+                    log(`❌ Error: ${err.message}`);
+                }
+            });
+            log("✅ Autenticación exitosa!");
+            const me = await client.getMe();
+            log(`👤 Bienvenido, ${me.firstName} ${me.lastName || ''} (${me.username || 'sin usuario'})`);
+            log("Obteniendo lista de chats...");
+            const dialogs = await client.getDialogs({ limit: 10 });
+            resultText.innerText = `📋 Primeros 10 chats:\n${dialogs.map(d => `- ${d.title} (ID: ${d.id})`).join('\n')}`;
+            stepPhoneDiv.classList.add('hidden');
+            stepCodeDiv.classList.add('hidden');
+            step2faDiv.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+        } catch (err) {
+            log(`❌ Falló la autenticación: ${err.message}`);
+            // Si falla, reiniciamos el cliente
+            client = null;
+            setStep('phone');
+        }
+    };
+
+    resetBtn.onclick = async () => {
+        if (client) {
+            try { await client.disconnect(); } catch(e) {}
+            client = null;
+        }
+        document.getElementById('phone').value = '+34';
+        document.getElementById('code').value = '';
+        document.getElementById('password').value = '';
+        setStep('phone');
+        resultDiv.classList.add('hidden');
+        log("🔄 Sesión cerrada. Puedes volver a intentarlo.");
+    };
+
+    log("✅ Script cargado. Introduce tu número de teléfono.");
 </script>
 </body>
 </html>
