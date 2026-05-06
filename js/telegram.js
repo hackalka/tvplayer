@@ -1,20 +1,8 @@
 // ================= CONFIGURACIÓN =================
-// 🔴 REEMPLAZA ESTOS VALORES CON LOS TUYOS (de my.telegram.org)
-const API_ID = 8952741;            // <--- TU API ID (número)
-const API_HASH = "693fb2da124662dad85b2b337c53a386";   // <--- TU API HASH (cadena)
+// REEMPLAZA CON TUS CREDENCIALES DE my.telegram.org
+const API_ID = 8952741;            // TU API ID
+const API_HASH = "693fb2da124662dad85b2b337c53a386";   // TU API HASH
 // =================================================
-
-const CONFIG = {
-    apiId: API_ID,
-    apiHash: API_HASH,
-    databaseDirectory: "tdlib_data",
-    useDatabase: true,
-    useChatInfoDatabase: true,
-    useMessageDatabase: true,
-    deviceModel: "Web Client",
-    systemVersion: "1.0",
-    applicationVersion: "1.0.0"
-};
 
 let client = null;
 let currentAuthState = null;
@@ -31,7 +19,7 @@ const authButton = document.getElementById('authButton');
 const connectionStatus = document.getElementById('connectionStatus');
 const chatsListContainer = document.getElementById('chatsListContainer');
 const messagesList = document.getElementById('messagesList');
-const currentChatTitleSpan = document.querySelector('#currentChatTitle span');
+const currentChatTitleSpan = document.getElementById('currentChatTitle');
 const inputMessageContainer = document.getElementById('inputMessageContainer');
 const messageInput = document.getElementById('messageInput');
 const sendMessageBtn = document.getElementById('sendMessageBtn');
@@ -41,12 +29,12 @@ function updateStatus(msg, isError = false) {
     if (isError) console.error(msg);
 }
 
-// Esperar a que TdClient esté disponible (por si tarda)
+// Esperar a que TdClient exista (carga local)
 function waitForTdClient(callback) {
     if (typeof TdClient !== 'undefined') {
         callback();
     } else {
-        updateStatus("Esperando librería tdweb...");
+        updateStatus("Cargando librería tdweb...");
         setTimeout(() => waitForTdClient(callback), 500);
     }
 }
@@ -54,14 +42,24 @@ function waitForTdClient(callback) {
 function initTdlib() {
     try {
         client = new TdClient({
+            apiId: API_ID,
+            apiHash: API_HASH,
+            databaseDirectory: "tdlib_db",
+            useDatabase: true,
+            useChatInfoDatabase: true,
+            useMessageDatabase: true,
+            deviceModel: "Web Client",
+            systemVersion: "1.0",
+            applicationVersion: "1.0.0",
             onUpdate: handleUpdate,
-            onError: (err) => { console.error(err); updateStatus("Error en TDLib: " + JSON.stringify(err), true); },
-            ...CONFIG
+            onError: (err) => {
+                console.error(err);
+                updateStatus("Error TDLib: " + JSON.stringify(err), true);
+            }
         });
-        updateStatus("Conectando...");
+        updateStatus("Cliente creado, esperando estado...");
     } catch (err) {
-        updateStatus("Fallo al crear cliente: " + err.message, true);
-        client = null;
+        updateStatus("Fatal: " + err.message, true);
     }
 }
 
@@ -72,10 +70,8 @@ function handleUpdate(update) {
             handleAuthState(update.authorization_state);
             break;
         case 'updateNewMessage':
-            if (currentChatId === update.message.chat_id) {
-                appendMessageToUI(update.message);
-            }
-            renderChatsList(); // para actualizar último mensaje
+            if (currentChatId === update.message.chat_id) appendMessageToUI(update.message);
+            renderChatsList();
             break;
         case 'updateChatLastMessage':
         case 'updateChatTitle':
@@ -92,9 +88,6 @@ function handleAuthState(authState) {
         mainApp.classList.add('hide');
         codeContainer.style.display = 'none';
         authButton.innerText = 'Enviar número';
-        // Limpiar inputs
-        phoneInput.value = '';
-        codeInput.value = '';
     } 
     else if (currentAuthState === 'authorizationStateWaitCode') {
         loginZone.classList.remove('hide');
@@ -114,162 +107,88 @@ async function renderChatsList() {
     if (!client) return;
     chatsListContainer.innerHTML = '<div class="loading-placeholder">Cargando chats...</div>';
     try {
-        const result = await client.send({
-            '@type': 'getChats',
-            offset_order: '9223372036854775807',
-            offset_chat_id: 0,
-            limit: 100
-        });
+        const result = await client.send({ '@type': 'getChats', offset_order: '9223372036854775807', offset_chat_id: 0, limit: 100 });
         if (result && result['@type'] === 'chats') {
             const chatIds = result.chat_ids;
-            if (!chatIds.length) {
-                chatsListContainer.innerHTML = '<div class="loading-placeholder">No hay chats aún</div>';
-                return;
-            }
+            if (!chatIds.length) { chatsListContainer.innerHTML = '<div>No hay chats</div>'; return; }
             let html = '';
             for (let id of chatIds) {
                 const chat = await client.send({ '@type': 'getChat', chat_id: id });
                 if (chat && chat['@type'] === 'chat') {
                     chatsMap.set(id, chat);
-                    const lastMsgText = chat.last_message?.content?.text?.text || '';
-                    html += `
-                        <div class="chat-item" data-chat-id="${id}">
-                            <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
-                            <div class="chat-info">
-                                <div class="chat-name">${escapeHtml(chat.title)}</div>
-                                <div class="chat-last-msg">${escapeHtml(lastMsgText.substring(0, 50))}</div>
-                            </div>
-                        </div>
-                    `;
+                    html += `<div class="chat-item" data-chat-id="${id}">
+                                <div class="chat-avatar"><i class="fa-solid fa-users"></i></div>
+                                <div class="chat-info">
+                                    <div class="chat-name">${escapeHtml(chat.title)}</div>
+                                    <div class="chat-last-msg">${escapeHtml(chat.last_message?.content?.text?.text || '')}</div>
+                                </div>
+                            </div>`;
                 }
             }
             chatsListContainer.innerHTML = html;
-            // Asignar eventos
             document.querySelectorAll('.chat-item').forEach(el => {
-                el.addEventListener('click', () => {
-                    const chatId = parseInt(el.getAttribute('data-chat-id'));
-                    openChat(chatId);
-                });
+                el.addEventListener('click', () => openChat(parseInt(el.dataset.chatId)));
             });
         }
-    } catch(e) {
-        console.error(e);
-        chatsListContainer.innerHTML = '<div class="loading-placeholder">Error al cargar chats</div>';
-    }
+    } catch(e) { console.error(e); }
 }
 
 async function openChat(chatId) {
     currentChatId = chatId;
     const chat = chatsMap.get(chatId);
-    const title = chat ? chat.title : 'Chat';
-    currentChatTitleSpan.innerText = title;
+    currentChatTitleSpan.innerText = chat ? chat.title : 'Chat';
     inputMessageContainer.style.display = 'flex';
     messagesList.innerHTML = '<div class="loading-placeholder">Cargando mensajes...</div>';
-
     try {
-        const history = await client.send({
-            '@type': 'getChatHistory',
-            chat_id: chatId,
-            from_message_id: 0,
-            offset: 0,
-            limit: 50,
-            only_local: false
-        });
+        const history = await client.send({ '@type': 'getChatHistory', chat_id: chatId, limit: 50 });
         if (history && history['@type'] === 'messages') {
             messagesList.innerHTML = '';
-            if (history.messages.length === 0) {
-                messagesList.innerHTML = '<div class="empty-chat"><i class="fa-regular fa-comment"></i><p>No hay mensajes aún</p></div>';
-            } else {
-                history.messages.reverse().forEach(msg => appendMessageToUI(msg));
-            }
+            history.messages.reverse().forEach(msg => appendMessageToUI(msg));
         }
-    } catch(e) {
-        console.error(e);
-        messagesList.innerHTML = '<div class="empty-chat">Error al cargar el historial</div>';
-    }
+    } catch(e) { messagesList.innerHTML = '<div>Error al cargar</div>'; }
 }
 
 function appendMessageToUI(msg) {
-    const isOutgoing = msg.is_outgoing;
-    let text = '';
-    if (msg.content['@type'] === 'messageText') {
-        text = msg.content.text.text;
-    } else {
-        text = '[Mensaje no texto]';
-    }
+    const isOut = msg.is_outgoing;
+    let text = msg.content['@type'] === 'messageText' ? msg.content.text.text : '[Otro tipo]';
     const date = new Date(msg.date * 1000);
-    const timeStr = date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message-bubble ${isOutgoing ? 'outgoing' : ''}`;
-    msgDiv.innerHTML = `
-        <div class="message-text">${escapeHtml(text)}</div>
-        <div class="message-meta">${timeStr}</div>
-    `;
-    messagesList.appendChild(msgDiv);
+    const timeStr = date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const div = document.createElement('div');
+    div.className = `message-bubble ${isOut ? 'outgoing' : ''}`;
+    div.innerHTML = `<div class="message-text">${escapeHtml(text)}</div><div class="message-meta">${timeStr}</div>`;
+    messagesList.appendChild(div);
     messagesList.scrollTop = messagesList.scrollHeight;
 }
 
 async function sendCurrentMessage() {
     if (!currentChatId || !client) return;
     const text = messageInput.value.trim();
-    if (text === '') return;
+    if (!text) return;
     messageInput.value = '';
-    try {
-        await client.send({
-            '@type': 'sendMessage',
-            chat_id: currentChatId,
-            input_message_content: {
-                '@type': 'inputMessageText',
-                text: { '@type': 'formattedText', text: text }
-            }
-        });
-    } catch(e) { console.error(e); }
+    await client.send({ '@type': 'sendMessage', chat_id: currentChatId, input_message_content: { '@type': 'inputMessageText', text: { '@type': 'formattedText', text: text } } });
 }
 
 async function onAuthAction() {
-    if (!client) {
-        alert("Cliente no inicializado. Espera un momento.");
-        return;
-    }
+    if (!client) { alert("Cliente no listo, espera..."); return; }
     if (currentAuthState === 'authorizationStateWaitPhoneNumber') {
         const phone = phoneInput.value.trim();
-        if (!phone) { alert("Introduce el número con código país (ej: +34666111222)"); return; }
-        try {
-            await client.send({
-                '@type': 'setAuthenticationPhoneNumber',
-                phone_number: phone,
-                settings: { '@type': 'phoneNumberAuthenticationSettings', allow_flash_call: false, is_current_phone_number: true }
-            });
-            updateStatus("Código enviado");
-        } catch(e) { alert("Error: " + e); }
+        if (!phone) { alert("Introduce número con código país"); return; }
+        await client.send({ '@type': 'setAuthenticationPhoneNumber', phone_number: phone, settings: { '@type': 'phoneNumberAuthenticationSettings', allow_flash_call: false, is_current_phone_number: true } });
     } 
     else if (currentAuthState === 'authorizationStateWaitCode') {
         const code = codeInput.value.trim();
-        if (!code) { alert("Introduce el código que te llegó por SMS"); return; }
-        try {
-            await client.send({ '@type': 'checkAuthenticationCode', code: code });
-        } catch(e) { alert("Código incorrecto"); }
+        if (!code) { alert("Introduce el código"); return; }
+        await client.send({ '@type': 'checkAuthenticationCode', code: code });
     }
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
+function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m==='&'?'&amp;': m==='<'?'&lt;':'&gt;'); }
 
-// Event listeners
 authButton.addEventListener('click', onAuthAction);
 sendMessageBtn.addEventListener('click', sendCurrentMessage);
-messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendCurrentMessage();
-});
+messageInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendCurrentMessage(); });
 
-// Inicio: esperar a que TdClient esté definido e inicializar
+// Inicio
 waitForTdClient(() => {
     initTdlib();
 });
