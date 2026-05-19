@@ -2,227 +2,74 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Cliente Telegram</title>
-    <!-- Estilos básicos para que se vea ordenado -->
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: #0f0f0f;
-            color: #e0e0e0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            padding: 20px;
-        }
-        #app {
-            background: #1e1e1e;
-            border-radius: 24px;
-            padding: 24px;
-            width: 100%;
-            max-width: 500px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
-        }
-        pre {
-            background: #2a2a2a;
-            padding: 12px;
-            border-radius: 12px;
-            overflow-x: auto;
-            font-size: 12px;
-            color: #f5c518;
-        }
-        .log {
-            background: #0a0a0a;
-            padding: 12px;
-            border-radius: 12px;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
-            margin-bottom: 16px;
-            border-left: 3px solid #f5c518;
-        }
-        button {
-            background: #f5c518;
-            color: #000;
-            border: none;
-            border-radius: 40px;
-            padding: 10px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:active { transform: scale(0.98); }
-        input {
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 40px;
-            padding: 10px 16px;
-            color: white;
-            width: 100%;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-        }
-        .hidden { display: none; }
-    </style>
+    <title>Player TV - Premium 2026</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <link rel="stylesheet" href="css/reproductor.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <!-- HLS.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
 <body>
-<div id="app">
-    <h2>🔐 Cliente Telegram</h2>
-    <div class="log" id="log">Cargando...</div>
 
-    <!-- Step 1: Phone number -->
-    <div id="stepPhone">
-        <input type="tel" id="phone" placeholder="+34600123456" value="+34">
-        <button id="btnPhone">Enviar número</button>
+<header>
+    <div class="logo-box">
+        <h1>PLAYER TV</h1>
     </div>
+</header>
 
-    <!-- Step 2: OTP (solo si hace falta) -->
-    <div id="stepCode" class="hidden">
-        <input type="text" id="code" placeholder="Código de verificación">
-        <button id="btnCode">Verificar</button>
-    </div>
-
-    <!-- Step 3: 2FA (solo si hace falta) -->
-    <div id="step2fa" class="hidden">
-        <input type="password" id="password" placeholder="Contraseña de dos pasos">
-        <button id="btn2fa">Enviar contraseña</button>
-    </div>
-
-    <!-- Resultados -->
-    <div id="result" class="hidden">
-        <pre id="resultText"></pre>
-        <button id="reset">Cerrar sesión y volver</button>
+<div class="search-container">
+    <div class="search-bar">
+        <i class="fa fa-search"></i>
+        <input type="text" id="mainSearch" placeholder="Buscar películas, series, deportes..." aria-label="Buscador">
     </div>
 </div>
 
-<!-- Cargar GramJS desde Skypack CDN -->
-<script type="module">
-    import { TelegramClient } from 'https://cdn.skypack.dev/telegram';
+<div id="hero-container" tabindex="-1"></div>
 
-    // 🔴 CAMBIA AQUÍ TUS CREDENCIALES
-    const API_ID = 8952741;          // <-- TU API ID (número entero)
-    const API_HASH = "693fb2da124662dad85b2b337c53a386";   // <-- TU API HASH (string)
+<nav class="nav" data-zona="nav">
+    <button class="f-btn active" data-filtro="inicio">INICIO</button>
+    <button class="f-btn" data-filtro="agenda">DEPORTES</button>
+    <button class="f-btn" data-filtro="peliculas">PELÍCULAS</button>
+    <button class="f-btn" data-filtro="series">SERIES</button>
+    <!-- SECCIÓN REEMPLAZADA: TV EN VIVO -> MUNDIAL 2026 -->
+    <button class="f-btn" data-filtro="mundial">🏆 MUNDIAL 2026</button>
+    <button class="f-btn" data-filtro="favoritos"><i class="fa fa-star"></i> FAVORITOS</button>
+</nav>
 
-    // Elementos del DOM
-    const logDiv = document.getElementById('log');
-    const stepPhoneDiv = document.getElementById('stepPhone');
-    const stepCodeDiv = document.getElementById('stepCode');
-    const step2faDiv = document.getElementById('step2fa');
-    const resultDiv = document.getElementById('result');
-    const resultText = document.getElementById('resultText');
-    const resetBtn = document.getElementById('reset');
+<div id="sub-nav" data-zona="subnav"></div>
 
-    let client = null;
-    let currentPhoneNumber = null;
+<div id="content" tabindex="-1"></div>
 
-    function log(msg) {
-        const timestamp = new Date().toLocaleTimeString();
-        logDiv.innerHTML += `[${timestamp}] ${msg}\n`;
-        logDiv.scrollTop = logDiv.scrollHeight;
-        console.log(msg);
-    }
+<!-- MODAL -->
+<div id="modal" class="modal" role="dialog" aria-modal="true" tabindex="-1">
+    <div class="modal-content">
+        <button class="close-btn" id="closeModalBtn" aria-label="Cerrar">✕</button>
+        <div id="modalHeader"></div>
+        <div class="modal-details">
+            <h2 id="det-titulo" style="color:var(--gold); margin: 15px 20px 5px; text-transform: uppercase;"></h2>
+            <p id="det-sinopsis" style="font-size: 14px; color: #ccc; margin: 0 20px 15px行业"></p>
+            <div id="modalActions"></div>
+            <div id="tabsTemporadas" class="tabs-temporadas"></div>
+            <div id="linksBox"></div>
+        </div>
+    </div>
+</div>
 
-    // Función para ocultar/mostrar pasos
-    function setStep(step) {
-        stepPhoneDiv.classList.add('hidden');
-        stepCodeDiv.classList.add('hidden');
-        step2faDiv.classList.add('hidden');
-        if (step === 'phone') stepPhoneDiv.classList.remove('hidden');
-        if (step === 'code') stepCodeDiv.classList.remove('hidden');
-        if (step === '2fa') step2faDiv.classList.remove('hidden');
-    }
-
-    // Inicialización del cliente
-    async function startClient() {
-        if (client) {
-            log("Cliente ya iniciado, cerrando sesión anterior...");
-            try { await client.disconnect(); } catch (e) {}
-        }
-        log("Creando nuevo cliente Telegram...");
-        client = new TelegramClient(new (await import('https://cdn.skypack.dev/telegram/sessions')).StringSession(""), API_ID, API_HASH, { connectionRetries: 5 });
-        log("Cliente creado.");
-    }
-
-    // Envío del número de teléfono
-    document.getElementById('btnPhone').onclick = async () => {
-        const phone = document.getElementById('phone').value.trim();
-        if (!phone) {
-            log("❌ Introduce un número válido (con código país).");
-            return;
-        }
-        currentPhoneNumber = phone;
-        log(`📞 Número ingresado: ${phone}`);
-        await startClient();
-        log("Solicitando código...");
-        try {
-            await client.start({
-                phoneNumber: async () => currentPhoneNumber,
-                password: async () => {
-                    log("⚠️ Se requiere contraseña de 2FA");
-                    setStep('2fa');
-                    return new Promise(resolve => {
-                        const send2fa = async () => {
-                            const pwd = document.getElementById('password').value;
-                            if (pwd) {
-                                document.getElementById('btn2fa').removeEventListener('click', send2fa);
-                                resolve(pwd);
-                            }
-                        };
-                        document.getElementById('btn2fa').onclick = send2fa;
-                    });
-                },
-                phoneCode: async () => {
-                    log("📨 Esperando código de verificación...");
-                    setStep('code');
-                    return new Promise(resolve => {
-                        const sendCode = async () => {
-                            const code = document.getElementById('code').value;
-                            if (code) {
-                                document.getElementById('btnCode').removeEventListener('click', sendCode);
-                                resolve(code);
-                            }
-                        };
-                        document.getElementById('btnCode').onclick = sendCode;
-                    });
-                },
-                onError: (err) => {
-                    log(`❌ Error: ${err.message}`);
-                }
-            });
-            log("✅ Autenticación exitosa!");
-            const me = await client.getMe();
-            log(`👤 Bienvenido, ${me.firstName} ${me.lastName || ''} (${me.username || 'sin usuario'})`);
-            log("Obteniendo lista de chats...");
-            const dialogs = await client.getDialogs({ limit: 10 });
-            resultText.innerText = `📋 Primeros 10 chats:\n${dialogs.map(d => `- ${d.title} (ID: ${d.id})`).join('\n')}`;
-            stepPhoneDiv.classList.add('hidden');
-            stepCodeDiv.classList.add('hidden');
-            step2faDiv.classList.add('hidden');
-            resultDiv.classList.remove('hidden');
-        } catch (err) {
-            log(`❌ Falló la autenticación: ${err.message}`);
-            // Si falla, reiniciamos el cliente
-            client = null;
-            setStep('phone');
-        }
-    };
-
-    resetBtn.onclick = async () => {
-        if (client) {
-            try { await client.disconnect(); } catch(e) {}
-            client = null;
-        }
-        document.getElementById('phone').value = '+34';
-        document.getElementById('code').value = '';
-        document.getElementById('password').value = '';
-        setStep('phone');
-        resultDiv.classList.add('hidden');
-        log("🔄 Sesión cerrada. Puedes volver a intentarlo.");
-    };
-
-    log("✅ Script cargado. Introduce tu número de teléfono.");
-</script>
+<!-- REPRODUCTOR INTERNO -->
+<div id="player-layer" style="display:none; position:fixed; inset:0; background:#000; z-index:4000; flex-direction:column; align-items:center; justify-content:center;">
+    <button class="btn-volver" id="closePlayerBtn" style="position:absolute; top:20px; left:20px; background:var(--red); color:white; border:none; padding:12px 24px; cursor:pointer; font-weight:bold; border-radius:8px;">
+        <i class="fa fa-arrow-left"></i> VOLVER
+    </button>
+    <h2 id="video-info" style="color:white; margin-bottom:15px; text-align:center;"></h2>
+    <video id="main-video" controls style="width:90%; max-height:80vh;"></video>
+</div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="js/main.js"></script>
 </body>
 </html>
