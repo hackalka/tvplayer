@@ -1,20 +1,22 @@
 // ===============================
-// PLAYER TV - FIREBASE INIT
+// PLAYER TV - FIREBASE INIT (PRO FIX)
 // ===============================
 
-// 🔐 Base64 de tu Firebase (la que ya usabas)
+// 🔐 Base64 Firebase
 const _db = "aHR0cHM6Ly9wbGF5ZXJ0di05NDQ5Yy1kZWZhdWx0LXJ0ZGIuZXVyb3BlLXdlc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBwLw==";
 
-// Inicializar Firebase
-firebase.initializeApp({
-    databaseURL: atob(_db)
-});
+// Evitar doble inicialización (IMPORTANTE)
+if (!firebase.apps.length) {
+    firebase.initializeApp({
+        databaseURL: atob(_db)
+    });
+}
 
 const db = firebase.database();
 
 
 // ===============================
-// BASE GLOBAL DEL CATÁLOGO
+// BASE GLOBAL
 // ===============================
 window.BASE = {
     peliculas: [],
@@ -26,7 +28,7 @@ window.BASE = {
 
 
 // ===============================
-// CARGAR DATOS EN TIEMPO REAL
+// CARGA FIREBASE
 // ===============================
 function cargarFirebase() {
 
@@ -34,9 +36,9 @@ function cargarFirebase() {
 
     rutas.forEach(cat => {
         db.ref(cat).on("value", snap => {
+
             const data = snap.val() || {};
 
-            // convertir objeto Firebase a array limpio
             const lista = Object.keys(data).map(key => ({
                 id: key,
                 ...data[key],
@@ -45,10 +47,10 @@ function cargarFirebase() {
 
             window.BASE[cat] = lista;
 
-            console.log(`✔ ${cat} cargado:`, lista.length);
+            console.log(`✔ ${cat} cargado: ${lista.length}`);
 
-            // avisar a main.js
-            if (window.renderCatalogo) {
+            // sincronización segura con main.js
+            if (typeof window.renderCatalogo === "function") {
                 window.renderCatalogo();
             }
         });
@@ -57,7 +59,7 @@ function cargarFirebase() {
 
 
 // ===============================
-// INICIALIZAR
+// INIT
 // ===============================
 document.addEventListener("DOMContentLoaded", () => {
     cargarFirebase();
