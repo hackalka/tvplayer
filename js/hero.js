@@ -5,25 +5,40 @@
 let heroIndex = 0;
 let heroItems = [];
 
-// INICIAR HERO
+
+// ===============================
+// INIT HERO
+// ===============================
 function initHero() {
+
     renderHero();
-    setInterval(cambiarHero, 6000);
+
+    setInterval(() => {
+        cambiarHero();
+    }, 6000);
 }
 
-// OBTENER ITEMS DESTACADOS
+
+// ===============================
+// OBTENER ITEMS
+// ===============================
 function getHeroItems() {
+
     if (!window.BASE) return [];
 
     return [
         ...(window.BASE.peliculas || []),
         ...(window.BASE.series || []),
         ...(window.BASE.mundial || [])
-    ].slice(0, 10);
+    ].filter(Boolean).slice(0, 10);
 }
 
+
+// ===============================
 // RENDER HERO
+// ===============================
 function renderHero() {
+
     const hero = document.getElementById("hero-container");
     if (!hero) return;
 
@@ -35,35 +50,56 @@ function renderHero() {
 
     hero.innerHTML = `
         <div class="hero">
-            <div class="hero-bg" style="background-image:url('${item.portada || item.logo1 || ''}')"></div>
-            
+            <div class="hero-bg"
+                style="background-image:url('${item.portada || item.logo1 || ''}')">
+            </div>
+
             <div class="hero-overlay"></div>
 
             <div class="hero-content">
+
                 <h1 class="hero-title">${item.titulo || ''}</h1>
-                <p class="hero-desc">${item.sinopsis || 'Contenido disponible en Player TV'}</p>
+
+                <p class="hero-desc">
+                    ${item.sinopsis || 'Contenido disponible en Player TV'}
+                </p>
 
                 <div class="hero-buttons">
-                    <button class="hero-btn" onclick="abrirHero(item)">▶ VER AHORA</button>
+                    <button class="hero-btn" onclick="abrirHero()">
+                        ▶ VER AHORA
+                    </button>
                 </div>
+
             </div>
         </div>
     `;
 }
 
-// CAMBIAR HERO AUTOMÁTICO
+
+// ===============================
+// CAMBIAR HERO
+// ===============================
 function cambiarHero() {
+
     if (!heroItems.length) return;
 
     heroIndex++;
-    if (heroIndex >= heroItems.length) heroIndex = 0;
+
+    if (heroIndex >= heroItems.length) {
+        heroIndex = 0;
+    }
 
     renderHero();
 }
 
-// ABRIR DESDE HERO
+
+// ===============================
+// ABRIR HERO
+// ===============================
 function abrirHero() {
+
     const item = heroItems[heroIndex];
+
     if (!item) return;
 
     if (typeof abrirItem === "function") {
@@ -71,7 +107,14 @@ function abrirHero() {
     }
 }
 
-// INICIAR CUANDO BASE LISTA
+
+// ===============================
+// INIT AUTOMÁTICO
+// ===============================
 document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(initHero, 1500);
+
+    setTimeout(() => {
+        initHero();
+    }, 1200);
+
 });
