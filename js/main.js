@@ -1,6 +1,5 @@
 // ===============================
-// PLAYER TV PRO - MAIN JS
-// NETFLIX UI + TVBOX NAV
+// PLAYER TV PRO - MAIN JS FIXED
 // ===============================
 
 
@@ -11,7 +10,8 @@ let estado = {
     filtro: "inicio",
     foco: null,
     gridIndex: 0,
-    items: []
+    items: [],
+    columnas: 5
 };
 
 
@@ -21,7 +21,13 @@ let estado = {
 document.addEventListener("DOMContentLoaded", () => {
     initNav();
     initMandoTV();
-    setTimeout(renderCatalogo, 500);
+
+    setTimeout(() => {
+        renderCatalogo();
+        setTimeout(() => {
+            focusNav();
+        }, 300);
+    }, 600);
 });
 
 
@@ -69,30 +75,9 @@ window.renderCatalogo = function () {
 
     cont.appendChild(grid);
 
-    setTimeout(() => setFocus(0), 100);
+    setTimeout(() => setFocus(0), 200);
 };
-const seguir = JSON.parse(localStorage.getItem("seguirViendo")) || [];
 
-if (seguir.length) {
-    seguir.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.tabIndex = 0;
-
-        card.innerHTML = `
-            <img src="${item.portada}">
-            <div class="title">${item.titulo}</div>
-        `;
-
-        card.onclick = () => {
-            if (typeof reproducir === "function") {
-                reproducir(item.link, [item], 0);
-            }
-        };
-
-        cont.appendChild(card);
-    });
-}
 
 // ===============================
 // NAVEGACIÓN MENÚ SUPERIOR
@@ -100,13 +85,17 @@ if (seguir.length) {
 function initNav() {
     document.querySelectorAll(".f-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            const filtro = btn.dataset.filtro;
-            estado.filtro = filtro;
 
-            document.querySelectorAll(".f-btn").forEach(b => b.classList.remove("active"));
+            estado.filtro = btn.dataset.filtro;
+
+            document.querySelectorAll(".f-btn")
+                .forEach(b => b.classList.remove("active"));
+
             btn.classList.add("active");
 
             renderCatalogo();
+
+            setTimeout(() => focusNav(), 100);
         });
     });
 }
@@ -139,36 +128,48 @@ function abrirItem(item) {
     });
 
     modal.classList.add("active");
-    setFocus(0);
+
+    setTimeout(() => {
+        const first = modal.querySelector(".link-item");
+        if (first) first.focus();
+    }, 200);
 }
 
 
 // ===============================
-// FOCO INTELIGENTE
+// FOCO GRID
 // ===============================
 function setFocus(index) {
     const cards = document.querySelectorAll(".card");
-
     if (!cards.length) return;
 
     if (index < 0) index = 0;
     if (index >= cards.length) index = cards.length - 1;
 
     estado.gridIndex = index;
-
-    cards[index].focus();
     estado.foco = cards[index];
 
+    cards[index].focus();
     cards[index].scrollIntoView({
         behavior: "smooth",
-        block: "center",
-        inline: "center"
+        block: "center"
     });
 }
 
 
 // ===============================
-// MANDO TVBOX (PRO LEVEL)
+// FOCO NAV (IMPORTANTE PRO TV)
+// ===============================
+function focusNav() {
+    const first = document.querySelector(".f-btn.active") ||
+                  document.querySelector(".f-btn");
+
+    if (first) first.focus();
+}
+
+
+// ===============================
+// MANDO TVBOX PRO
 // ===============================
 function initMandoTV() {
 
@@ -176,53 +177,57 @@ function initMandoTV() {
 
         const cards = document.querySelectorAll(".card");
         const links = document.querySelectorAll(".link-item");
+        const navBtns = document.querySelectorAll(".f-btn");
 
-        let elementos = [...cards, ...links];
-
-        let index = elementos.indexOf(document.activeElement);
+        const isModal = document.getElementById("modal")?.classList.contains("active");
 
         // ENTER
         if (e.key === "Enter") {
-            if (document.activeElement) {
-                document.activeElement.click();
-            }
+            document.activeElement?.click();
             return;
         }
 
         // ESC
         if (e.key === "Escape") {
             const modal = document.getElementById("modal");
+
             if (modal && modal.classList.contains("active")) {
                 modal.classList.remove("active");
+                focusNav();
             }
             return;
         }
 
-        // SI NO HAY FOCO
+        // SI MODAL ACTIVO → SOLO LINKS
+        if (isModal) {
+            let index = Array.from(links).indexOf(document.activeElement);
+
+            if (e.key === "ArrowDown") index++;
+            if (e.key === "ArrowUp") index--;
+
+            if (links[index]) links[index].focus();
+
+            e.preventDefault();
+            return;
+        }
+
+        // GRID NORMAL
+        let elementos = [...cards];
+
+        let index = elementos.indexOf(document.activeElement);
+
         if (index === -1) {
             setFocus(0);
             return;
         }
 
-        // DERECHA
-        if (e.key === "ArrowRight") {
-            index++;
-        }
+        const cols = estado.columnas;
 
-        // IZQUIERDA
-        if (e.key === "ArrowLeft") {
-            index--;
-        }
+        if (e.key === "ArrowRight") index++;
+        if (e.key === "ArrowLeft") index--;
 
-        // ABAJO
-        if (e.key === "ArrowDown") {
-            index += 5; // salto tipo grid Netflix
-        }
-
-        // ARRIBA
-        if (e.key === "ArrowUp") {
-            index -= 5;
-        }
+        if (e.key === "ArrowDown") index += cols;
+        if (e.key === "ArrowUp") index -= cols;
 
         if (elementos[index]) {
             elementos[index].focus();
