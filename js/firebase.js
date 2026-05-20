@@ -41,10 +41,14 @@ function cargarFirebase() {
             const data = snap.val() || {};
 
             const lista = Object.keys(data).map(key => ({
-                id: key,
-                ...data[key],
-                categoria: cat
-            }));
+    id: key,
+    ...data[key],
+    categoria: cat,
+    _key: key
+}))
+.sort((a, b) => {
+    return b._key.localeCompare(a._key);
+});
 
             window.BASE[cat] = lista;
 
