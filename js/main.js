@@ -1,5 +1,5 @@
 // ===============================
-// PLAYER TV PRO - MAIN JS FIXED
+// PLAYER TV PRO - MAIN JS
 // ===============================
 
 
@@ -10,8 +10,7 @@ let estado = {
     filtro: "inicio",
     foco: null,
     gridIndex: 0,
-    items: [],
-    columnas: 5
+    items: []
 };
 
 
@@ -23,11 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
     initMandoTV();
 
     setTimeout(() => {
-        renderCatalogo();
-        setTimeout(() => {
-            focusNav();
-        }, 300);
-    }, 600);
+        if (typeof renderCatalogo === "function") {
+            renderCatalogo();
+        }
+    }, 500);
 });
 
 
@@ -35,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // RENDER PRINCIPAL
 // ===============================
 window.renderCatalogo = function () {
+
     const cont = document.getElementById("content");
     if (!cont || !window.BASE) return;
 
@@ -42,11 +41,12 @@ window.renderCatalogo = function () {
 
     let data = [];
 
+    // ================= INICIO =================
     if (estado.filtro === "inicio") {
         data = [
-            ...window.BASE.peliculas,
-            ...window.BASE.series,
-            ...window.BASE.mundial
+            ...(window.BASE.peliculas || []),
+            ...(window.BASE.series || []),
+            ...(window.BASE.mundial || [])
         ];
     } else {
         data = window.BASE[estado.filtro] || [];
@@ -58,6 +58,7 @@ window.renderCatalogo = function () {
     grid.className = "grid";
 
     data.forEach((item, i) => {
+
         const card = document.createElement("div");
         card.className = "card";
         card.tabIndex = 0;
@@ -75,7 +76,7 @@ window.renderCatalogo = function () {
 
     cont.appendChild(grid);
 
-    setTimeout(() => setFocus(0), 200);
+    setTimeout(() => setFocus(0), 100);
 };
 
 
@@ -83,10 +84,13 @@ window.renderCatalogo = function () {
 // NAVEGACIÓN MENÚ SUPERIOR
 // ===============================
 function initNav() {
+
     document.querySelectorAll(".f-btn").forEach(btn => {
+
         btn.addEventListener("click", () => {
 
-            estado.filtro = btn.dataset.filtro;
+            const filtro = btn.dataset.filtro;
+            estado.filtro = filtro;
 
             document.querySelectorAll(".f-btn")
                 .forEach(b => b.classList.remove("active"));
@@ -94,19 +98,20 @@ function initNav() {
             btn.classList.add("active");
 
             renderCatalogo();
-
-            setTimeout(() => focusNav(), 100);
         });
     });
 }
 
 
 // ===============================
-// ABRIR ITEM
+// ABRIR ITEM (MODAL)
 // ===============================
 function abrirItem(item) {
+
     const modal = document.getElementById("modal");
     if (!modal) return;
+
+    modal.classList.add("active");
 
     document.getElementById("det-titulo").innerText = item.titulo || "";
     document.getElementById("det-sinopsis").innerText = item.sinopsis || "";
@@ -114,32 +119,36 @@ function abrirItem(item) {
     const box = document.getElementById("linksBox");
     box.innerHTML = "";
 
-    ["link", "link1", "stream"].forEach(k => {
+    const links = ["link", "link1", "stream"];
+
+    links.forEach(k => {
+
         if (item[k]) {
+
             const div = document.createElement("div");
             div.className = "link-item";
             div.tabIndex = 0;
-            div.innerText = "VER";
 
-            div.onclick = () => window.open(item[k], "_blank");
+            div.innerHTML = `
+                <span>▶ VER</span>
+                <small>PLAY</small>
+            `;
+
+            div.onclick = () => {
+                window.open(item[k], "_blank");
+            };
 
             box.appendChild(div);
         }
     });
-
-    modal.classList.add("active");
-
-    setTimeout(() => {
-        const first = modal.querySelector(".link-item");
-        if (first) first.focus();
-    }, 200);
 }
 
 
 // ===============================
-// FOCO GRID
+// FOCO TV / GRID NAV
 // ===============================
 function setFocus(index) {
+
     const cards = document.querySelectorAll(".card");
     if (!cards.length) return;
 
@@ -150,26 +159,17 @@ function setFocus(index) {
     estado.foco = cards[index];
 
     cards[index].focus();
+
     cards[index].scrollIntoView({
         behavior: "smooth",
-        block: "center"
+        block: "center",
+        inline: "center"
     });
 }
 
 
 // ===============================
-// FOCO NAV (IMPORTANTE PRO TV)
-// ===============================
-function focusNav() {
-    const first = document.querySelector(".f-btn.active") ||
-                  document.querySelector(".f-btn");
-
-    if (first) first.focus();
-}
-
-
-// ===============================
-// MANDO TVBOX PRO
+// MANDO TVBOX (PRO)
 // ===============================
 function initMandoTV() {
 
@@ -177,57 +177,45 @@ function initMandoTV() {
 
         const cards = document.querySelectorAll(".card");
         const links = document.querySelectorAll(".link-item");
-        const navBtns = document.querySelectorAll(".f-btn");
 
-        const isModal = document.getElementById("modal")?.classList.contains("active");
+        let elementos = [...cards, ...links];
+
+        let index = elementos.indexOf(document.activeElement);
 
         // ENTER
         if (e.key === "Enter") {
-            document.activeElement?.click();
+            if (document.activeElement) {
+                document.activeElement.click();
+            }
             return;
         }
 
         // ESC
         if (e.key === "Escape") {
             const modal = document.getElementById("modal");
-
             if (modal && modal.classList.contains("active")) {
                 modal.classList.remove("active");
-                focusNav();
             }
             return;
         }
 
-        // SI MODAL ACTIVO → SOLO LINKS
-        if (isModal) {
-            let index = Array.from(links).indexOf(document.activeElement);
-
-            if (e.key === "ArrowDown") index++;
-            if (e.key === "ArrowUp") index--;
-
-            if (links[index]) links[index].focus();
-
-            e.preventDefault();
-            return;
-        }
-
-        // GRID NORMAL
-        let elementos = [...cards];
-
-        let index = elementos.indexOf(document.activeElement);
-
+        // si no hay foco
         if (index === -1) {
             setFocus(0);
             return;
         }
 
-        const cols = estado.columnas;
-
+        // derecha
         if (e.key === "ArrowRight") index++;
+
+        // izquierda
         if (e.key === "ArrowLeft") index--;
 
-        if (e.key === "ArrowDown") index += cols;
-        if (e.key === "ArrowUp") index -= cols;
+        // abajo (grid tipo Netflix)
+        if (e.key === "ArrowDown") index += 5;
+
+        // arriba
+        if (e.key === "ArrowUp") index -= 5;
 
         if (elementos[index]) {
             elementos[index].focus();
