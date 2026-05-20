@@ -421,3 +421,34 @@ input:focus{
     }
 
 }
+/* =========================
+   MODAL NETFLIX PRO
+   ========================= */
+
+.tab-btn{
+    background:#1a1d25;
+    border:none;
+    color:#aaa;
+    padding:8px 12px;
+    margin:5px;
+    border-radius:6px;
+}
+
+.tab-btn.active{
+    background:#e50914;
+    color:white;
+}
+
+.episode-item{
+    display:flex;
+    justify-content:space-between;
+    background:#1a1d25;
+    margin:6px 0;
+    padding:12px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.episode-item:focus{
+    outline:3px solid #ffd400;
+}
