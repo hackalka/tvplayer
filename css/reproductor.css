@@ -186,3 +186,64 @@ header{
 html{
     scroll-behavior:smooth;
 }
+/* =========================
+   HERO NETFLIX PRO
+   ========================= */
+
+.hero{
+    position:relative;
+    height:300px;
+    margin:10px 20px;
+    border-radius:12px;
+    overflow:hidden;
+    background:#000;
+}
+
+.hero-bg{
+    position:absolute;
+    inset:0;
+    background-size:cover;
+    background-position:center;
+    filter:blur(2px) brightness(0.6);
+    transform:scale(1.1);
+}
+
+.hero-overlay{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.2));
+}
+
+.hero-content{
+    position:absolute;
+    bottom:20px;
+    left:20px;
+    z-index:2;
+    max-width:60%;
+}
+
+.hero-title{
+    font-size:26px;
+    font-weight:800;
+    margin-bottom:10px;
+}
+
+.hero-desc{
+    font-size:13px;
+    color:#ccc;
+    margin-bottom:12px;
+}
+
+.hero-btn{
+    background:#e50914;
+    border:none;
+    color:white;
+    padding:10px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.hero-btn:focus{
+    outline:3px solid #ffd400;
+}
