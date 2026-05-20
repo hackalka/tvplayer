@@ -53,7 +53,7 @@ function cargarVideo(url) {
 
     video.pause();
     video.src = "";
-
+    guardarProgreso();
     // ================= HLS =================
     if (url.includes(".m3u8")) {
 
@@ -92,7 +92,25 @@ function nextEpisode() {
     }
 }
 
+function guardarProgreso() {
 
+    if (!video || !playlist.length) return;
+
+    const item = playlist[currentIndex];
+
+    let data = JSON.parse(localStorage.getItem("seguirViendo")) || [];
+
+    data = data.filter(i => i.titulo !== item.titulo);
+
+    data.unshift({
+        titulo: item.titulo,
+        link: item.link,
+        portada: item.portada || "",
+        progreso: video.currentTime || 0
+    });
+
+    localStorage.setItem("seguirViendo", JSON.stringify(data));
+}
 // ===============================
 // CONTROLES TVBOX
 // ===============================
