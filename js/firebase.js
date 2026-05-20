@@ -1,136 +1,64 @@
-// ========================================
-// PLAYER_TV FIREBASE CONNECT
-// ========================================
+// ===============================
+// PLAYER TV - FIREBASE INIT
+// ===============================
 
-// FIREBASE CONFIG
-const firebaseConfig = {
-    databaseURL: "https://player-tv-default-rtdb.europe-west1.firebasedatabase.app/"
-};
+// 🔐 Base64 de tu Firebase (la que ya usabas)
+const _db = "aHR0cHM6Ly9wbGF5ZXJ0di05NDQ5Yy1kZWZhdWx0LXJ0ZGIuZXVyb3BlLXdlc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBwLw==";
 
-// INIT
-firebase.initializeApp(firebaseConfig);
+// Inicializar Firebase
+firebase.initializeApp({
+    databaseURL: atob(_db)
+});
 
-// DATABASE
 const db = firebase.database();
 
-// ========================================
-// VARIABLES GLOBALES
-// ========================================
 
-let peliculas = [];
-let series = [];
-let deportes = [];
+// ===============================
+// BASE GLOBAL DEL CATÁLOGO
+// ===============================
+window.BASE = {
+    peliculas: [],
+    series: [],
+    mundial: [],
+    agenda: [],
+    favoritos: []
+};
 
-// ========================================
-// CARGAR PELICULAS
-// ========================================
 
-function cargarPeliculas() {
+// ===============================
+// CARGAR DATOS EN TIEMPO REAL
+// ===============================
+function cargarFirebase() {
 
-    db.ref("peliculas").on("value", (snapshot) => {
+    const rutas = ["peliculas", "series", "mundial", "agenda"];
 
-        const data = snapshot.val();
+    rutas.forEach(cat => {
+        db.ref(cat).on("value", snap => {
+            const data = snap.val() || {};
 
-        peliculas = [];
+            // convertir objeto Firebase a array limpio
+            const lista = Object.keys(data).map(key => ({
+                id: key,
+                ...data[key],
+                categoria: cat
+            }));
 
-        if (data) {
+            window.BASE[cat] = lista;
 
-            Object.keys(data).forEach(key => {
+            console.log(`✔ ${cat} cargado:`, lista.length);
 
-                peliculas.push({
-                    id: key,
-                    ...data[key]
-                });
-
-            });
-
-        }
-
-        console.log("PELÍCULAS:", peliculas);
-
-        renderPeliculas();
-
+            // avisar a main.js
+            if (window.renderCatalogo) {
+                window.renderCatalogo();
+            }
+        });
     });
-
 }
 
-// ========================================
-// RENDER PELICULAS
-// ========================================
 
-function renderPeliculas() {
-
-    const container = document.getElementById("catalog-grid");
-    const hero = document.getElementById("catalog-hero");
-    const heroTitle = document.getElementById("hero-title");
-    const heroMeta = document.getElementById("hero-meta");
-    const heroOverview = document.getElementById("hero-overview");
-    const heroBackdrop = document.getElementById("hero-backdrop");
-
-    if (!container) return;
-
-    container.innerHTML = "";
-
-    // ==========================
-    // HERO (DESTACADO)
-    // ==========================
-    if (peliculas.length > 0) {
-        const featured = peliculas[0];
-
-        if (hero) hero.style.display = "block";
-
-        if (heroTitle) heroTitle.textContent = featured.titulo;
-        if (heroOverview) heroOverview.textContent = featured.sinopsis || "Sin descripción";
-
-        if (heroMeta) {
-            heroMeta.innerHTML = `
-                <span style="color:gold;">🎬 Película</span>
-                <span>•</span>
-                <span>${featured.genero || "General"}</span>
-            `;
-        }
-
-        if (heroBackdrop && featured.portada) {
-            heroBackdrop.style.backgroundImage = `url(${featured.portada})`;
-        }
-
-    }
-
-    // ==========================
-    // CARRUSEL STYLE NETFLIX
-    // ==========================
-    const row = document.createElement("div");
-    row.className = "row-container";
-
-    peliculas.forEach((item, index) => {
-
-        const card = document.createElement("div");
-        card.className = "card";
-        card.tabIndex = 0;
-
-        card.innerHTML = `
-            <img src="${item.portada}" class="card-img">
-            <div class="card-info">
-                <h3>${item.titulo}</h3>
-            </div>
-        `;
-
-        card.onclick = () => {
-            alert("VER: " + item.titulo);
-        };
-
-        row.appendChild(card);
-    });
-
-    container.appendChild(row);
-}
-
-// ========================================
-// START
-// ========================================
-
-window.addEventListener("load", () => {
-
-    cargarPeliculas();
-
+// ===============================
+// INICIALIZAR
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+    cargarFirebase();
 });
