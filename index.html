@@ -7,14 +7,18 @@
     
     <link rel="stylesheet" href="css/reproductor.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
+    <!-- Telegram WebApp (si lo usas en mini app) -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    
-    <!-- HLS.js -->
+
+    <!-- HLS -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 </head>
+
 <body>
 
 <header>
@@ -23,6 +27,7 @@
     </div>
 </header>
 
+<!-- SEARCH -->
 <div class="search-container">
     <div class="search-bar">
         <i class="fa fa-search"></i>
@@ -30,47 +35,87 @@
     </div>
 </div>
 
+<!-- HERO -->
 <div id="hero-container" tabindex="-1"></div>
 
+<!-- NAV -->
 <nav class="nav" data-zona="nav">
     <button class="f-btn active" data-filtro="inicio">INICIO</button>
     <button class="f-btn" data-filtro="agenda">DEPORTES</button>
     <button class="f-btn" data-filtro="peliculas">PELÍCULAS</button>
     <button class="f-btn" data-filtro="series">SERIES</button>
-    <!-- SECCIÓN REEMPLAZADA: TV EN VIVO -> MUNDIAL 2026 -->
     <button class="f-btn" data-filtro="mundial">🏆 MUNDIAL 2026</button>
-    <button class="f-btn" data-filtro="favoritos"><i class="fa fa-star"></i> FAVORITOS</button>
+    <button class="f-btn" data-filtro="favoritos">
+        <i class="fa fa-star"></i> FAVORITOS
+    </button>
 </nav>
 
+<!-- SUB NAV -->
 <div id="sub-nav" data-zona="subnav"></div>
 
+<!-- CONTENT -->
 <div id="content" tabindex="-1"></div>
 
-<!-- MODAL -->
+<!-- =========================
+     MODAL
+========================= -->
 <div id="modal" class="modal" role="dialog" aria-modal="true" tabindex="-1">
+
     <div class="modal-content">
+
         <button class="close-btn" id="closeModalBtn" aria-label="Cerrar">✕</button>
+
         <div id="modalHeader"></div>
+
         <div class="modal-details">
-            <h2 id="det-titulo" style="color:var(--gold); margin: 15px 20px 5px; text-transform: uppercase;"></h2>
-            <p id="det-sinopsis" style="font-size: 14px; color: #ccc; margin: 0 20px 15px行业"></p>
+
+            <h2 id="det-titulo"
+                style="color:var(--gold); margin:15px 20px 5px; text-transform:uppercase;">
+            </h2>
+
+            <p id="det-sinopsis"
+               style="font-size:14px; color:#ccc; margin:0 20px 15px;">
+            </p>
+
             <div id="modalActions"></div>
+
             <div id="tabsTemporadas" class="tabs-temporadas"></div>
+
             <div id="linksBox"></div>
+
         </div>
     </div>
 </div>
 
-<!-- REPRODUCTOR INTERNO -->
-<div id="player-layer" style="display:none; position:fixed; inset:0; background:#000; z-index:4000; flex-direction:column; align-items:center; justify-content:center;">
-    <button class="btn-volver" id="closePlayerBtn" style="position:absolute; top:20px; left:20px; background:var(--red); color:white; border:none; padding:12px 24px; cursor:pointer; font-weight:bold; border-radius:8px;">
+<!-- =========================
+     PLAYER
+========================= -->
+<div id="player-layer"
+     style="display:none; position:fixed; inset:0; background:#000; z-index:4000;
+            flex-direction:column; align-items:center; justify-content:center;">
+
+    <button id="closePlayerBtn"
+        style="position:absolute; top:20px; left:20px;
+               background:var(--red); color:white; border:none;
+               padding:12px 24px; cursor:pointer; font-weight:bold; border-radius:8px;">
         <i class="fa fa-arrow-left"></i> VOLVER
     </button>
-    <h2 id="video-info" style="color:white; margin-bottom:15px; text-align:center;"></h2>
-    <video id="main-video" controls style="width:90%; max-height:80vh;"></video>
+
+    <h2 id="video-info" style="color:white; margin-bottom:15px;"></h2>
+
+    <video id="main-video"
+           controls
+           style="width:90%; max-height:80vh;">
+    </video>
+
 </div>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<!-- =========================
+     SCRIPTS (ORDEN IMPORTANTE)
+========================= -->
+
 <script src="js/main.js"></script>
 <script src="js/firebase.js"></script>
+
 </body>
 </html>
