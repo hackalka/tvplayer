@@ -1,12 +1,12 @@
 // ===============================
-// PLAYER TV PRO - PLAYER FIXED
+// PLAYER TV PRO - PLAYER INTERNO
 // ===============================
 
 let video = null;
 let hls = null;
+
 let playlist = [];
 let currentIndex = 0;
-let controlesActivos = false;
 
 
 // ===============================
@@ -24,28 +24,23 @@ function initPlayer() {
 
 
 // ===============================
-// ABRIR VIDEO
+// REPRODUCIR
 // ===============================
 function reproducir(url, lista = [], index = 0) {
 
     const layer = document.getElementById("player-layer");
     const info = document.getElementById("video-info");
 
-    playlist = lista;
+    playlist = lista || [];
     currentIndex = index;
 
     layer.style.display = "flex";
 
     info.innerText = lista[index]?.titulo || "Reproduciendo...";
 
-    if (!video) initPlayer();
-
     cargarVideo(url);
 
-    if (!controlesActivos) {
-        initControles();
-        controlesActivos = true;
-    }
+    initControles();
 }
 
 
@@ -56,7 +51,9 @@ function cargarVideo(url) {
 
     if (!video) initPlayer();
 
-    // limpiar HLS
+    if (!video) return;
+
+    // limpiar HLS anterior
     if (hls) {
         hls.destroy();
         hls = null;
@@ -65,56 +62,63 @@ function cargarVideo(url) {
     video.pause();
     video.src = "";
 
+    guardarProgreso();
+
     // ================= HLS =================
-    if (url.includes(".m3u8")) {
+    if (url && url.includes(".m3u8")) {
 
         if (window.Hls && Hls.isSupported()) {
+
             hls = new Hls();
             hls.loadSource(url);
             hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                video.play().catch(()=>{});
-            });
-        }
 
-        else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                video.play().catch(() => {});
+            });
+
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+
             video.src = url;
-            video.play().catch(()=>{});
+            video.play().catch(() => {});
         }
 
     }
 
     // ================= MP4 =================
-    else {
-        video.src = url;
-        video.play().catch(()=>{});
-    }
+    else if (url) {
 
-    guardarProgreso();
+        video.src = url;
+        video.play().catch(() => {});
+    }
 }
 
 
 // ===============================
-// SIGUIENTE CAPÍTULO
+// SIGUIENTE EPISODIO
 // ===============================
 function nextEpisode() {
 
+    if (!playlist.length) return;
+
     if (currentIndex + 1 < playlist.length) {
+
         currentIndex++;
 
         const next = playlist[currentIndex];
 
         if (!next) return;
 
-        document.getElementById("video-info").innerText = next.titulo;
-
         cargarVideo(next.link);
+
+        const info = document.getElementById("video-info");
+        if (info) info.innerText = next.titulo;
     }
 }
 
 
 // ===============================
-// GUARDAR PROGRESO
+// GUARDAR PROGRESO (FOLLOW)
 // ===============================
 function guardarProgreso() {
 
@@ -140,46 +144,49 @@ function guardarProgreso() {
 
 
 // ===============================
-// CONTROLES TVBOX PRO
+// CONTROLES TVBOX
 // ===============================
 function initControles() {
 
-    document.addEventListener("keydown", (e) => {
+    document.onkeydown = (e) => {
 
         const layer = document.getElementById("player-layer");
 
         if (!layer || layer.style.display !== "flex") return;
 
-        switch (e.key) {
+        // ESC
+        if (e.key === "Escape") {
+            cerrarPlayer();
+        }
 
-            case "Escape":
-                cerrarPlayer();
-                break;
+        // PLAY / PAUSE
+        if (e.key === "Enter") {
+            if (video.paused) video.play();
+            else video.pause();
+        }
 
-            case "Enter":
-                if (video.paused) video.play();
-                else video.pause();
-                break;
+        // NEXT EPISODE
+        if (e.key === "ArrowRight") {
+            nextEpisode();
+        }
 
-            case "ArrowRight":
-                nextEpisode();
-                break;
+        // BACK 10s
+        if (e.key === "ArrowLeft") {
+            video.currentTime -= 10;
+        }
 
-            case "ArrowLeft":
-                video.currentTime = Math.max(0, video.currentTime - 10);
-                break;
+        // PAUSE
+        if (e.key === "ArrowDown") {
+            video.pause();
+        }
 
-            case "ArrowDown":
-                video.pause();
-                break;
-
-            case "ArrowUp":
-                video.play();
-                break;
+        // PLAY
+        if (e.key === "ArrowUp") {
+            video.play();
         }
 
         e.preventDefault();
-    });
+    };
 }
 
 
@@ -200,7 +207,7 @@ function cerrarPlayer() {
         video.src = "";
     }
 
-    layer.style.display = "none";
-
-    controlesActivos = false;
+    if (layer) {
+        layer.style.display = "none";
+    }
 }
