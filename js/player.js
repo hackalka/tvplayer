@@ -155,7 +155,9 @@ function initControles() {
     };
 }
 
-
+video.addEventListener("ended", () => {
+    nextEpisode();
+});
 // ===============================
 // CERRAR PLAYER
 // ===============================
