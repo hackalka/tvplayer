@@ -1,5 +1,5 @@
 // ===============================
-// PLAYER TV PRO - MODAL NETFLIX
+// PLAYER TV PRO - MODAL (FIXED)
 // ===============================
 
 let modalState = {
@@ -31,22 +31,22 @@ function abrirItem(item) {
 
 
     // ===============================
-    // PELÍCULA (simple)
+    // DETECTAR SERIE O PELÍCULA
     // ===============================
     if (!isSerie(item.titulo)) {
-
         crearLinks([item], linksBox);
         return;
     }
 
 
     // ===============================
-    // SERIE (Netflix mode)
+    // SERIE
     // ===============================
     const raiz = getRoot(item.titulo);
 
     const episodios = (window.BASE.series || [])
         .filter(i => getRoot(i.titulo) === raiz);
+
 
     construirTemporadas(episodios, tabs, linksBox);
 }
@@ -68,11 +68,13 @@ function construirTemporadas(lista, tabs, box) {
     modalState.temporadas = {};
     modalState.serieActual = lista;
 
-    // agrupar temporadas
+    // ===============================
+    // AGRUPAR POR TEMPORADA
+    // ===============================
     lista.forEach(ep => {
 
         let match = ep.titulo.match(/S(\d+)/i);
-        let temp = match ? match[1] : "1";
+        let temp = match ? parseInt(match[1]) : 1;
 
         if (!modalState.temporadas[temp]) {
             modalState.temporadas[temp] = [];
@@ -81,12 +83,21 @@ function construirTemporadas(lista, tabs, box) {
         modalState.temporadas[temp].push(ep);
     });
 
+
+    // ===============================
+    // ORDEN TEMPORADAS (IMPORTANTE FIX)
+    // ===============================
     const keys = Object.keys(modalState.temporadas)
-        .sort((a, b) => parseInt(a) - parseInt(b));
+        .map(Number)
+        .sort((a, b) => a - b);
+
 
     modalState.temporadaActiva = keys[0];
 
-    // tabs temporadas
+
+    // ===============================
+    // CREAR TABS
+    // ===============================
     keys.forEach((t, i) => {
 
         const btn = document.createElement("button");
@@ -109,6 +120,8 @@ function construirTemporadas(lista, tabs, box) {
         tabs.appendChild(btn);
     });
 
+
+    // primera carga
     mostrarCapitulos(modalState.temporadas[keys[0]], box);
 }
 
@@ -128,6 +141,7 @@ function mostrarCapitulos(episodios, box) {
         return na - nb;
     });
 
+
     episodios.forEach(ep => {
 
         const div = document.createElement("div");
@@ -141,18 +155,16 @@ function mostrarCapitulos(episodios, box) {
 
         div.onclick = () => {
 
+            const lista = episodios.map(e => ({
+                titulo: e.titulo,
+                link: e.link,
+                portada: e.portada || ""
+            }));
+
+            const index = episodios.indexOf(ep);
+
             if (typeof reproducir === "function") {
-
-                const lista = episodios.map(e => ({
-                    titulo: e.titulo,
-                    link: e.link,
-                    portada: e.portada || ""
-                }));
-
-                const index = episodios.indexOf(ep);
-
                 reproducir(ep.link, lista, index);
-
             } else {
                 window.open(ep.link, "_blank");
             }
@@ -164,34 +176,33 @@ function mostrarCapitulos(episodios, box) {
 
 
 // ===============================
-// LINKS SIMPLE (PELÍCULAS)
+// LINKS PELÍCULAS
 // ===============================
 function crearLinks(lista, box) {
 
     lista.forEach(item => {
 
-        if (item.link) {
+        if (!item.link) return;
 
-            const div = document.createElement("div");
-            div.className = "link-item";
-            div.tabIndex = 0;
+        const div = document.createElement("div");
+        div.className = "link-item";
+        div.tabIndex = 0;
 
-            div.innerHTML = `
-                <span>▶ REPRODUCIR</span>
-                <small>PLAY</small>
-            `;
+        div.innerHTML = `
+            <span>▶ REPRODUCIR</span>
+            <small>PLAY</small>
+        `;
 
-            div.onclick = () => {
+        div.onclick = () => {
 
-                if (typeof reproducir === "function") {
-                    reproducir(item.link, [item], 0);
-                } else {
-                    window.open(item.link, "_blank");
-                }
-            };
+            if (typeof reproducir === "function") {
+                reproducir(item.link, [item], 0);
+            } else {
+                window.open(item.link, "_blank");
+            }
+        };
 
-            box.appendChild(div);
-        }
+        box.appendChild(div);
     });
 }
 
