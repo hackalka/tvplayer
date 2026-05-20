@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Player TV Admin PRO</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#0f0f14;
+    color:white;
+}
+
+.login{
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+}
+
+input{
+    padding:12px;
+    margin:5px;
+    width:250px;
+    border:none;
+    border-radius:6px;
+}
+
+button{
+    padding:12px;
+    width:270px;
+    border:none;
+    background:#e50914;
+    color:white;
+    cursor:pointer;
+    border-radius:6px;
+}
+
+.panel{
+    display:none;
+    padding:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.card{
+    background:#1a1a22;
+    padding:10px;
+    border-radius:8px;
+}
+
+.small{
+    font-size:12px;
+    opacity:.7;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="login" class="login">
+    <h2>🔐 ADMIN LOGIN</h2>
+    <input id="email" placeholder="Email">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Entrar</button>
+</div>
+
+<!-- PANEL -->
+<div id="panel" class="panel">
+
+    <h2>🎬 PLAYER TV ADMIN PRO</h2>
+    <button onclick="logout()">Salir</button>
+
+    <hr>
+
+    <h3>➕ Crear contenido</h3>
+
+    <div class="grid">
+        <input id="titulo" placeholder="Título">
+        <input id="sinopsis" placeholder="Sinopsis">
+        <input id="portada" placeholder="Portada URL">
+        <input id="link" placeholder="Video / m3u8">
+    </div>
+
+    <button onclick="crear()">Guardar</button>
+
+    <hr>
+
+    <h3>📦 Contenido</h3>
+    <div id="listado"></div>
+
+</div>
+
+<script src="js/admin-pro.js"></script>
+
+</body>
+</html>
