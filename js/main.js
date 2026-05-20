@@ -71,7 +71,28 @@ window.renderCatalogo = function () {
 
     setTimeout(() => setFocus(0), 100);
 };
+const seguir = JSON.parse(localStorage.getItem("seguirViendo")) || [];
 
+if (seguir.length) {
+    seguir.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.tabIndex = 0;
+
+        card.innerHTML = `
+            <img src="${item.portada}">
+            <div class="title">${item.titulo}</div>
+        `;
+
+        card.onclick = () => {
+            if (typeof reproducir === "function") {
+                reproducir(item.link, [item], 0);
+            }
+        };
+
+        cont.appendChild(card);
+    });
+}
 
 // ===============================
 // NAVEGACIÓN MENÚ SUPERIOR
