@@ -155,8 +155,13 @@ function crearLinks(lista, box) {
                 <small>TV</small>
             `;
 
-            div.onclick = () => window.open(item.link, "_blank");
-
+            div.onclick = () => {
+    if (typeof reproducir === "function") {
+        reproducir(ep.link, episodios, episodios.indexOf(ep));
+    } else {
+        window.open(ep.link, "_blank");
+    }
+};
             box.appendChild(div);
         }
     });
