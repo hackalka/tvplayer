@@ -1,34 +1,35 @@
 // ===============================
-// PLAYER TV - FIREBASE INIT (PRO FIX)
+// PLAYER TV PRO - FIREBASE INIT
 // ===============================
 
-// 🔐 Base64 Firebase
+// 🔐 Firebase base64 (tu URL actual)
 const _db = "aHR0cHM6Ly9wbGF5ZXJ0di05NDQ5Yy1kZWZhdWx0LXJ0ZGIuZXVyb3BlLXdlc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBwLw==";
 
-// Evitar doble inicialización (IMPORTANTE)
-if (!firebase.apps.length) {
-    firebase.initializeApp({
-        databaseURL: atob(_db)
-    });
-}
+// ===============================
+// INIT FIREBASE
+// ===============================
+firebase.initializeApp({
+    databaseURL: atob(_db)
+});
 
 const db = firebase.database();
 
 
 // ===============================
-// BASE GLOBAL
+// BASE GLOBAL (CATÁLOGO)
 // ===============================
 window.BASE = {
     peliculas: [],
     series: [],
     mundial: [],
     agenda: [],
-    favoritos: []
+    favoritos: [],
+    destacados: null
 };
 
 
 // ===============================
-// CARGA FIREBASE
+// CARGAR DATOS EN TIEMPO REAL
 // ===============================
 function cargarFirebase() {
 
@@ -47,13 +48,24 @@ function cargarFirebase() {
 
             window.BASE[cat] = lista;
 
-            console.log(`✔ ${cat} cargado: ${lista.length}`);
+            console.log(`✔ ${cat} cargado:`, lista.length);
 
-            // sincronización segura con main.js
-            if (typeof window.renderCatalogo === "function") {
+            // refrescar UI si existe
+            if (window.renderCatalogo) {
                 window.renderCatalogo();
             }
         });
+    });
+
+    // ===============================
+    // DESTACADO HERO
+    // ===============================
+    db.ref("destacado_manual").on("value", snap => {
+        window.BASE.destacados = snap.val() || null;
+
+        if (typeof window.renderHero === "function") {
+            window.renderHero();
+        }
     });
 }
 
