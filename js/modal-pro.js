@@ -1,8 +1,6 @@
 // ===============================
-// PLAYER TV PRO - MODAL NETFLIX
-// SERIES + CAPÍTULOS + TVBOX NAV
+// PLAYER TV PRO - MODAL NETFLIX FIXED
 // ===============================
-
 
 let modalState = {
     serieActual: null,
@@ -12,7 +10,7 @@ let modalState = {
 
 
 // ===============================
-// ABRIR MODAL PRO
+// ABRIR MODAL
 // ===============================
 function abrirItem(item) {
 
@@ -34,17 +32,19 @@ function abrirItem(item) {
 
 
     // ===============================
-    // SI ES PELÍCULA (simple)
+    // DETECCIÓN SIMPLE PERO SEGURA
     // ===============================
-    if (!item.titulo.match(/S\d+/i)) {
+    const esSerie = (item.titulo && item.titulo.match(/S\d+/i));
 
+
+    if (!esSerie) {
         crearLinks([item], linksBox);
         return;
     }
 
 
     // ===============================
-    // SI ES SERIE (Netflix mode)
+    // SERIE MODE
     // ===============================
     const raiz = getRoot(item.titulo);
 
@@ -56,14 +56,13 @@ function abrirItem(item) {
 
 
 // ===============================
-// CONSTRUIR TEMPORADAS
+// TEMPORADAS
 // ===============================
 function construirTemporadas(lista, tabs, box) {
 
     modalState.temporadas = {};
     modalState.serieActual = lista;
 
-    // agrupar temporadas
     lista.forEach(ep => {
 
         let match = ep.titulo.match(/S(\d+)/i);
@@ -80,7 +79,6 @@ function construirTemporadas(lista, tabs, box) {
 
     modalState.temporadaActiva = keys[0];
 
-    // crear tabs
     keys.forEach((t, i) => {
 
         const btn = document.createElement("button");
@@ -105,7 +103,7 @@ function construirTemporadas(lista, tabs, box) {
 
 
 // ===============================
-// MOSTRAR CAPÍTULOS
+// CAPÍTULOS
 // ===============================
 function mostrarCapitulos(episodios, box) {
 
@@ -129,7 +127,11 @@ function mostrarCapitulos(episodios, box) {
         `;
 
         div.onclick = () => {
-            window.open(ep.link, "_blank");
+            if (typeof reproducir === "function") {
+                reproducir(ep.link, episodios, episodios.indexOf(ep));
+            } else {
+                window.open(ep.link, "_blank");
+            }
         };
 
         box.appendChild(div);
@@ -138,38 +140,38 @@ function mostrarCapitulos(episodios, box) {
 
 
 // ===============================
-// LINKS SIMPLE (PELÍCULAS)
+// PELÍCULAS
 // ===============================
 function crearLinks(lista, box) {
 
     lista.forEach(item => {
 
-        if (item.link) {
+        if (!item.link) return;
 
-            const div = document.createElement("div");
-            div.className = "link-item";
-            div.tabIndex = 0;
+        const div = document.createElement("div");
+        div.className = "link-item";
+        div.tabIndex = 0;
 
-            div.innerHTML = `
-                <span>▶ REPRODUCIR</span>
-                <small>TV</small>
-            `;
+        div.innerHTML = `
+            <span>▶ REPRODUCIR</span>
+            <small>TV</small>
+        `;
 
-            div.onclick = () => {
-    if (typeof reproducir === "function") {
-        reproducir(ep.link, episodios, episodios.indexOf(ep));
-    } else {
-        window.open(ep.link, "_blank");
-    }
-};
-            box.appendChild(div);
-        }
+        div.onclick = () => {
+            if (typeof reproducir === "function") {
+                reproducir(item.link, [item], 0);
+            } else {
+                window.open(item.link, "_blank");
+            }
+        };
+
+        box.appendChild(div);
     });
 }
 
 
 // ===============================
-// UTILIDAD GLOBAL
+// ROOT
 // ===============================
 function getRoot(t) {
     return (t || "")
