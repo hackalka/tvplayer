@@ -2,110 +2,263 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Player TV Admin PRO</title>
-
+<title>Player TV - ADMIN PRO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <style>
 body{
-    margin:0;
-    font-family:Arial;
-    background:#0f0f14;
+    font-family: Arial;
+    background:#0b0b10;
     color:white;
+    margin:0;
 }
 
-.login{
-    height:100vh;
+/* LOGIN */
+#loginBox{
+    position:fixed;
+    inset:0;
+    background:#0b0b10;
     display:flex;
-    justify-content:center;
     align-items:center;
+    justify-content:center;
     flex-direction:column;
 }
 
-input{
-    padding:12px;
-    margin:5px;
-    width:250px;
-    border:none;
+.login-card{
+    background:#151520;
+    padding:20px;
+    border-radius:10px;
+    width:300px;
+}
+
+input, select{
+    width:100%;
+    padding:10px;
+    margin:5px 0;
     border-radius:6px;
+    border:none;
+    background:#222;
+    color:white;
 }
 
 button{
-    padding:12px;
-    width:270px;
+    padding:10px;
+    width:100%;
     border:none;
-    background:#e50914;
-    color:white;
-    cursor:pointer;
     border-radius:6px;
+    cursor:pointer;
+    margin-top:8px;
+    font-weight:bold;
+}
+
+.enter{
+    background:#22c55e;
+}
+
+/* ADMIN */
+header{
+    padding:20px;
+    background:#111;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.container{
+    padding:20px;
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    gap:20px;
 }
 
 .panel{
-    display:none;
-    padding:20px;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
+    background:#151520;
+    padding:15px;
+    border-radius:10px;
 }
 
 .card{
-    background:#1a1a22;
+    background:#1b1b28;
     padding:10px;
+    margin-bottom:10px;
     border-radius:8px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
 }
 
-.small{
-    font-size:12px;
-    opacity:.7;
-}
+small{color:#aaa;}
 </style>
-</head>
 
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+</head>
 <body>
 
 <!-- LOGIN -->
-<div id="login" class="login">
-    <h2>🔐 ADMIN LOGIN</h2>
-    <input id="email" placeholder="Email">
-    <input id="pass" type="password" placeholder="Password">
-    <button onclick="login()">Entrar</button>
+<div id="loginBox">
+    <div class="login-card">
+        <h2>🔐 ADMIN LOGIN</h2>
+        <input id="pass" type="password" placeholder="Contraseña">
+        <button class="enter" onclick="login()">ENTRAR</button>
+        <p id="error" style="color:red;"></p>
+    </div>
 </div>
 
-<!-- PANEL -->
-<div id="panel" class="panel">
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none;">
 
+<header>
     <h2>🎬 PLAYER TV ADMIN PRO</h2>
-    <button onclick="logout()">Salir</button>
+</header>
 
-    <hr>
+<div class="container">
 
-    <h3>➕ Crear contenido</h3>
+    <div class="panel">
+        <h3>➕ Añadir</h3>
 
-    <div class="grid">
         <input id="titulo" placeholder="Título">
         <input id="sinopsis" placeholder="Sinopsis">
-        <input id="portada" placeholder="Portada URL">
-        <input id="link" placeholder="Video / m3u8">
+        <input id="portada" placeholder="Portada">
+        <input id="link" placeholder="Link">
+
+        <select id="categoria">
+            <option value="peliculas">Películas</option>
+            <option value="series">Series</option>
+            <option value="mundial">Mundial</option>
+            <option value="agenda">Agenda</option>
+        </select>
+
+        <button onclick="guardar()" style="background:#22c55e;">GUARDAR</button>
+        <button onclick="actualizar()" style="background:#f59e0b;">ACTUALIZAR</button>
     </div>
 
-    <button onclick="crear()">Guardar</button>
-
-    <hr>
-
-    <h3>📦 Contenido</h3>
-    <div id="listado"></div>
+    <div class="panel">
+        <h3>📦 CONTENIDO</h3>
+        <div id="lista"></div>
+    </div>
 
 </div>
 
-<script src="js/admin-pro.js"></script>
+</div>
+
+<script>
+// ================= FIREBASE =================
+const _db = "aHR0cHM6Ly9wbGF5ZXJ0di05NDQ5Yy1kZWZhdWx0LXJ0ZGIuZXVyb3BlLXdlc3QxLmZpcmViYXNlZGF0YWJhc2UuYXBwLw==";
+
+firebase.initializeApp({
+    databaseURL: atob(_db)
+});
+
+const db = firebase.database();
+
+let editId = null;
+let editCat = "peliculas";
+
+// ================= LOGIN BASE64 =================
+const PASS = "Y2thbGthMjI3NA=="; // ckalka2274
+
+function login(){
+
+    const input = document.getElementById("pass").value;
+    const encoded = btoa(input);
+
+    if(encoded === PASS){
+
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+
+        cargar();
+
+    } else {
+        document.getElementById("error").innerText = "❌ Contraseña incorrecta";
+    }
+}
+
+// ================= CARGAR =================
+function cargar(){
+
+    const cont = document.getElementById("lista");
+    cont.innerHTML = "";
+
+    ["peliculas","series","mundial","agenda"].forEach(cat=>{
+
+        db.ref(cat).on("value", snap=>{
+
+            const data = snap.val() || {};
+
+            Object.keys(data).forEach(id=>{
+
+                const item = data[id];
+
+                const div = document.createElement("div");
+                div.className="card";
+
+                div.innerHTML = `
+                    <div>
+                        <b>${item.titulo}</b><br>
+                        <small>${cat}</small>
+                    </div>
+                    <div>
+                        <button onclick="editar('${cat}','${id}','${item.titulo}','${item.sinopsis || ''}','${item.portada || ''}','${item.link || ''}')">✏️</button>
+                        <button onclick="borrar('${cat}','${id}')">🗑️</button>
+                    </div>
+                `;
+
+                cont.appendChild(div);
+            });
+        });
+    });
+}
+
+// ================= GUARDAR =================
+function guardar(){
+
+    db.ref(categoria.value).push({
+        titulo: titulo.value,
+        sinopsis: sinopsis.value,
+        portada: portada.value,
+        link: link.value
+    });
+
+    alert("Guardado");
+}
+
+// ================= EDITAR =================
+function editar(cat,id,t,s,p,l){
+
+    editId = id;
+    editCat = cat;
+
+    titulo.value = t;
+    sinopsis.value = s;
+    portada.value = p;
+    link.value = l;
+    categoria.value = cat;
+}
+
+// ================= ACTUALIZAR =================
+function actualizar(){
+
+    db.ref(editCat+"/"+editId).update({
+        titulo: titulo.value,
+        sinopsis: sinopsis.value,
+        portada: portada.value,
+        link: link.value
+    });
+
+    alert("Actualizado");
+}
+
+// ================= BORRAR =================
+function borrar(cat,id){
+
+    if(confirm("Eliminar?")){
+        db.ref(cat+"/"+id).remove();
+    }
+}
+</script>
 
 </body>
 </html>
