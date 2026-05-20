@@ -247,3 +247,23 @@ html{
 .hero-btn:focus{
     outline:3px solid #ffd400;
 }
+/* =========================
+   PLAYER INTERNO PRO
+   ========================= */
+
+#player-layer{
+    background:#000;
+}
+
+#video-info{
+    font-size:16px;
+    font-weight:bold;
+    text-align:center;
+    margin-bottom:10px;
+}
+
+#main-video{
+    width:90%;
+    max-height:80vh;
+    outline:none;
+}
