@@ -61,35 +61,68 @@ function cargarPeliculas() {
 function renderPeliculas() {
 
     const container = document.getElementById("catalog-grid");
+    const hero = document.getElementById("catalog-hero");
+    const heroTitle = document.getElementById("hero-title");
+    const heroMeta = document.getElementById("hero-meta");
+    const heroOverview = document.getElementById("hero-overview");
+    const heroBackdrop = document.getElementById("hero-backdrop");
 
     if (!container) return;
 
     container.innerHTML = "";
 
-    peliculas.forEach(item => {
+    // ==========================
+    // HERO (DESTACADO)
+    // ==========================
+    if (peliculas.length > 0) {
+        const featured = peliculas[0];
+
+        if (hero) hero.style.display = "block";
+
+        if (heroTitle) heroTitle.textContent = featured.titulo;
+        if (heroOverview) heroOverview.textContent = featured.sinopsis || "Sin descripción";
+
+        if (heroMeta) {
+            heroMeta.innerHTML = `
+                <span style="color:gold;">🎬 Película</span>
+                <span>•</span>
+                <span>${featured.genero || "General"}</span>
+            `;
+        }
+
+        if (heroBackdrop && featured.portada) {
+            heroBackdrop.style.backgroundImage = `url(${featured.portada})`;
+        }
+
+    }
+
+    // ==========================
+    // CARRUSEL STYLE NETFLIX
+    // ==========================
+    const row = document.createElement("div");
+    row.className = "row-container";
+
+    peliculas.forEach((item, index) => {
 
         const card = document.createElement("div");
-
         card.className = "card";
-
-        card.setAttribute("tabindex", "0");
+        card.tabIndex = 0;
 
         card.innerHTML = `
             <img src="${item.portada}" class="card-img">
-
             <div class="card-info">
                 <h3>${item.titulo}</h3>
             </div>
         `;
 
         card.onclick = () => {
-            alert(item.titulo);
+            alert("VER: " + item.titulo);
         };
 
-        container.appendChild(card);
-
+        row.appendChild(card);
     });
 
+    container.appendChild(row);
 }
 
 // ========================================
