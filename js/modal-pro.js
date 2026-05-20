@@ -1,5 +1,5 @@
 // ===============================
-// PLAYER TV PRO - MODAL NETFLIX FIXED
+// PLAYER TV PRO - MODAL NETFLIX
 // ===============================
 
 let modalState = {
@@ -10,7 +10,7 @@ let modalState = {
 
 
 // ===============================
-// ABRIR MODAL
+// ABRIR ITEM
 // ===============================
 function abrirItem(item) {
 
@@ -19,32 +19,29 @@ function abrirItem(item) {
 
     modal.classList.add("active");
 
-    const titulo = document.getElementById("det-titulo");
-    const sinopsis = document.getElementById("det-sinopsis");
+    document.getElementById("det-titulo").innerText = item.titulo || "";
+    document.getElementById("det-sinopsis").innerText =
+        item.sinopsis || "Sin descripción disponible";
+
     const linksBox = document.getElementById("linksBox");
     const tabs = document.getElementById("tabsTemporadas");
-
-    titulo.innerText = item.titulo || "";
-    sinopsis.innerText = item.sinopsis || "Sin descripción disponible";
 
     linksBox.innerHTML = "";
     tabs.innerHTML = "";
 
 
     // ===============================
-    // DETECCIÓN SIMPLE PERO SEGURA
+    // PELÍCULA (simple)
     // ===============================
-    const esSerie = (item.titulo && item.titulo.match(/S\d+/i));
+    if (!isSerie(item.titulo)) {
 
-
-    if (!esSerie) {
         crearLinks([item], linksBox);
         return;
     }
 
 
     // ===============================
-    // SERIE MODE
+    // SERIE (Netflix mode)
     // ===============================
     const raiz = getRoot(item.titulo);
 
@@ -56,13 +53,22 @@ function abrirItem(item) {
 
 
 // ===============================
-// TEMPORADAS
+// CHECK SERIE
+// ===============================
+function isSerie(titulo) {
+    return /S\d+/i.test(titulo || "");
+}
+
+
+// ===============================
+// CONSTRUIR TEMPORADAS
 // ===============================
 function construirTemporadas(lista, tabs, box) {
 
     modalState.temporadas = {};
     modalState.serieActual = lista;
 
+    // agrupar temporadas
     lista.forEach(ep => {
 
         let match = ep.titulo.match(/S(\d+)/i);
@@ -75,10 +81,12 @@ function construirTemporadas(lista, tabs, box) {
         modalState.temporadas[temp].push(ep);
     });
 
-    const keys = Object.keys(modalState.temporadas).sort();
+    const keys = Object.keys(modalState.temporadas)
+        .sort((a, b) => parseInt(a) - parseInt(b));
 
     modalState.temporadaActiva = keys[0];
 
+    // tabs temporadas
     keys.forEach((t, i) => {
 
         const btn = document.createElement("button");
@@ -86,14 +94,17 @@ function construirTemporadas(lista, tabs, box) {
         btn.tabIndex = 0;
         btn.innerText = "T" + t;
 
+        if (i === 0) btn.classList.add("active");
+
         btn.onclick = () => {
-            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+
+            document.querySelectorAll(".tab-btn")
+                .forEach(b => b.classList.remove("active"));
+
             btn.classList.add("active");
 
             mostrarCapitulos(modalState.temporadas[t], box);
         };
-
-        if (i === 0) btn.classList.add("active");
 
         tabs.appendChild(btn);
     });
@@ -103,15 +114,17 @@ function construirTemporadas(lista, tabs, box) {
 
 
 // ===============================
-// CAPÍTULOS
+// MOSTRAR CAPÍTULOS
 // ===============================
 function mostrarCapitulos(episodios, box) {
 
     box.innerHTML = "";
 
     episodios.sort((a, b) => {
-        const na = parseInt((a.titulo.match(/E(\d+)/i) || [0,0])[1]);
-        const nb = parseInt((b.titulo.match(/E(\d+)/i) || [0,0])[1]);
+
+        const na = parseInt((a.titulo.match(/E(\d+)/i) || [0, 0])[1]);
+        const nb = parseInt((b.titulo.match(/E(\d+)/i) || [0, 0])[1]);
+
         return na - nb;
     });
 
@@ -127,8 +140,19 @@ function mostrarCapitulos(episodios, box) {
         `;
 
         div.onclick = () => {
+
             if (typeof reproducir === "function") {
-                reproducir(ep.link, episodios, episodios.indexOf(ep));
+
+                const lista = episodios.map(e => ({
+                    titulo: e.titulo,
+                    link: e.link,
+                    portada: e.portada || ""
+                }));
+
+                const index = episodios.indexOf(ep);
+
+                reproducir(ep.link, lista, index);
+
             } else {
                 window.open(ep.link, "_blank");
             }
@@ -140,40 +164,43 @@ function mostrarCapitulos(episodios, box) {
 
 
 // ===============================
-// PELÍCULAS
+// LINKS SIMPLE (PELÍCULAS)
 // ===============================
 function crearLinks(lista, box) {
 
     lista.forEach(item => {
 
-        if (!item.link) return;
+        if (item.link) {
 
-        const div = document.createElement("div");
-        div.className = "link-item";
-        div.tabIndex = 0;
+            const div = document.createElement("div");
+            div.className = "link-item";
+            div.tabIndex = 0;
 
-        div.innerHTML = `
-            <span>▶ REPRODUCIR</span>
-            <small>TV</small>
-        `;
+            div.innerHTML = `
+                <span>▶ REPRODUCIR</span>
+                <small>PLAY</small>
+            `;
 
-        div.onclick = () => {
-            if (typeof reproducir === "function") {
-                reproducir(item.link, [item], 0);
-            } else {
-                window.open(item.link, "_blank");
-            }
-        };
+            div.onclick = () => {
 
-        box.appendChild(div);
+                if (typeof reproducir === "function") {
+                    reproducir(item.link, [item], 0);
+                } else {
+                    window.open(item.link, "_blank");
+                }
+            };
+
+            box.appendChild(div);
+        }
     });
 }
 
 
 // ===============================
-// ROOT
+// ROOT CLEANER
 // ===============================
 function getRoot(t) {
+
     return (t || "")
         .toUpperCase()
         .replace(/\sS\d+.*$/g, "")
