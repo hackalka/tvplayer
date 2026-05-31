@@ -1,2 +1,0 @@
-C:\Users\rparr\Desktop\player\web\src\wasmJsMain\kotlin\TdWeb.kt
-C:\Users\rparr\Desktop\player\web\src\wasmJsMain\kotlin\Main.kt

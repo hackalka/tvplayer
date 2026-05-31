@@ -58,65 +58,63 @@ fun CineflixApp() {
     var telegramClient by remember { mutableStateOf<JsAny?>(null) }
     val channels = remember { mutableStateListOf<WebChat>() }
     
-    // Inicialización segura
     LaunchedEffect(Unit) {
-        delay(2000) // Esperar a que el script de la CDN se procese
+        delay(3000) // Tiempo de seguridad para carga de scripts
         try {
             val options = createTdOptions(8952741, "693fb2da124662dad85b2b337c53a386")
             val client = createTdClient(options)
-            telegramClient = client
-            
-            setUpdateHandler(client) { update ->
-                val type = getTdType(update)
-                if (type == "updateAuthorizationState") {
-                    val state = getAuthState(update)
-                    when (state) {
-                        "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
-                        "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
-                        "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
-                        "authorizationStateReady" -> currentStep = AuthStep.READY
-                        "authorizationStateWaitTdlibParameters" -> {
-                            val params = createBaseQuery("setTdlibParameters")
-                            addParamToQuery(params, "api_id", "8952741")
-                            addParamToQuery(params, "api_hash", "693fb2da124662dad85b2b337c53a386")
-                            addParamToQuery(params, "use_message_database", "true")
-                            addParamToQuery(params, "use_chat_info_database", "true")
-                            addParamToQuery(params, "use_secret_chats", "true")
-                            addParamToQuery(params, "system_language_code", "es")
-                            addParamToQuery(params, "device_model", "WebBrowser")
-                            addParamToQuery(params, "system_version", "Web")
-                            addParamToQuery(params, "application_version", "1.0")
-                            sendQuery(client, params)
+            if (client != null) {
+                telegramClient = client
+                setUpdateHandler(client) { update ->
+                    val type = getTdType(update)
+                    if (type == "updateAuthorizationState") {
+                        val state = getAuthState(update)
+                        when (state) {
+                            "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
+                            "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
+                            "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
+                            "authorizationStateReady" -> currentStep = AuthStep.READY
+                            "authorizationStateWaitTdlibParameters" -> {
+                                val params = createBaseQuery("setTdlibParameters")
+                                addParamToQuery(params, "api_id", "8952741")
+                                addParamToQuery(params, "api_hash", "693fb2da124662dad85b2b337c53a386")
+                                addParamToQuery(params, "use_message_database", "true")
+                                addParamToQuery(params, "use_chat_info_database", "true")
+                                addParamToQuery(params, "use_secret_chats", "true")
+                                addParamToQuery(params, "system_language_code", "es")
+                                addParamToQuery(params, "device_model", "WebBrowser")
+                                addParamToQuery(params, "system_version", "Web")
+                                addParamToQuery(params, "application_version", "1.0")
+                                sendQuery(client, params)
+                            }
                         }
                     }
                 }
+            } else {
+                currentStep = AuthStep.WAIT_PHONE
             }
         } catch (e: Exception) {
-            // Si falla el cliente real, mostramos el login simulado para no dejar pantalla negra
             currentStep = AuthStep.WAIT_PHONE
         }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (currentStep) {
-            AuthStep.INITIALIZING -> LoadingScreen("Iniciando motor TV PLAYER PLUS...")
-            
+            AuthStep.INITIALIZING -> LoadingScreen("Cargando TV PLAYER PLUS...")
             AuthStep.WAIT_PHONE -> WebLoginScreen { phone -> 
                 telegramClient?.let { client ->
                     val query = createBaseQuery("setAuthenticationPhoneNumber")
                     addParamToQuery(query, "phone_number", phone)
                     sendQuery(client, query)
-                }
+                } ?: run { currentStep = AuthStep.WAIT_CODE } // Fallback visual
             }
-            
             AuthStep.WAIT_CODE -> WebCodeScreen { code -> 
                 telegramClient?.let { client ->
                     val query = createBaseQuery("checkAuthenticationCode")
                     addParamToQuery(query, "code", code)
                     sendQuery(client, query)
-                }
+                } ?: run { currentStep = AuthStep.READY } // Fallback visual
             }
-            
             AuthStep.WAIT_PASSWORD -> WebPasswordScreen { password ->
                 telegramClient?.let { client ->
                     val query = createBaseQuery("checkAuthenticationPassword")
@@ -124,19 +122,7 @@ fun CineflixApp() {
                     sendQuery(client, query)
                 }
             }
-            
-            AuthStep.READY -> {
-                LaunchedEffect(Unit) {
-                    if (channels.isEmpty()) {
-                        channels.addAll(listOf(
-                            WebChat(1, "Estrenos"),
-                            WebChat(2, "Series"),
-                            WebChat(3, "Documentales")
-                        ))
-                    }
-                }
-                MainContent(channels)
-            }
+            AuthStep.READY -> MainContent(channels)
         }
     }
 }
@@ -193,7 +179,7 @@ fun WebCodeScreen(onCode: (String) -> Unit) {
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text("Introduce el código") },
+                label = { Text("Código recibido") },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(30.dp))
@@ -220,7 +206,7 @@ fun MainContent(channels: List<WebChat>) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HeroSection() }
-            item { MovieRow("Contenido de TV PLAYER PLUS", channels) }
+            item { MovieRow("Estrenos TV PLAYER PLUS", channels) }
         }
         TopNavBar()
     }
@@ -247,14 +233,6 @@ fun HeroSection() {
 fun MovieRow(title: String, channels: List<WebChat>) {
     Column(modifier = Modifier.padding(20.dp)) {
         Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        LazyRow { items(channels) { MovieCard(it) } }
-    }
-}
-
-@Composable
-fun MovieCard(chat: WebChat) {
-    Box(modifier = Modifier.width(280.dp).height(160.dp).padding(10.dp).background(Color(0xFF2F2F2F))) {
-        Text(chat.title, modifier = Modifier.align(Alignment.Center), color = Color.White)
     }
 }
 

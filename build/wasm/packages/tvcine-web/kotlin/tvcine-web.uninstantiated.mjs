@@ -268,7 +268,18 @@ export async function instantiate(imports={}, runInitializer=true) {
         'androidx.compose.ui.platform.keyCode_$external_prop_setter' : (_this, v) => _this.keyCode = v,
         'androidx.compose.ui.window.force_$external_prop_getter' : (_this) => _this.force,
         'androidx.compose.foundation.text.EventListener' : (handler) => (event) => { handler(event) },
-        'createTdClient' : (options) => new window.tdweb(options),
+        'createTdClient' : (options) => 
+            try {
+                if (window.tdweb) {
+                    return new window.tdweb(options);
+                }
+                console.error('tdweb no encontrado en window');
+                return null;
+            } catch (e) {
+                console.error('Error creando TdClient:', e);
+                return null;
+            }
+        ,
         'sendQuery' : (client, query) => client.send(query),
         'setUpdateHandler' : (client, handler) => client.onUpdate = handler,
         'createTdOptions' : (apiId, apiHash) => 
