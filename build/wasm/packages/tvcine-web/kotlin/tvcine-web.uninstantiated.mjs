@@ -267,7 +267,29 @@ export async function instantiate(imports={}, runInitializer=true) {
         'androidx.compose.ui.platform.data_$external_prop_getter' : (_this) => _this.data,
         'androidx.compose.ui.platform.keyCode_$external_prop_setter' : (_this, v) => _this.keyCode = v,
         'androidx.compose.ui.window.force_$external_prop_getter' : (_this) => _this.force,
-        'androidx.compose.foundation.text.EventListener' : (handler) => (event) => { handler(event) }
+        'androidx.compose.foundation.text.EventListener' : (handler) => (event) => { handler(event) },
+        'createTdOptions' : (apiId, apiHash) => 
+            ({
+                instanceName: 'tvcine_web',
+                readOnly: false,
+                isBackground: false,
+                logVerbosityLevel: 1,
+                jsLogVerbosityLevel: 1,
+                useDatabase: true
+            })
+        ,
+        'createBaseQuery' : (type) => ({ '@type': type }),
+        'addParamToQuery' : (query, key, value) => 
+            (function(q, k, v) {
+                q[k] = v;
+                return q;
+            })(query, key, value)
+        ,
+        'getTdType' : (obj) => obj['@type'],
+        'getAuthState' : (update) => update.authorization_state['@type'],
+        'TdClient_$external_fun' : (p0) => new TdClient(p0),
+        'send_$external_fun' : (_this, p0) => _this.send(p0),
+        'onUpdate_$external_prop_setter' : (_this, v) => _this.onUpdate = v
     }
     
     // Placed here to give access to it from externals (js_code)

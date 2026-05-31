@@ -19,7 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.CanvasBasedWindow
 import kotlinx.coroutines.delay
+import kotlin.js.JsAny
 
+// Estado de autenticación
 enum class AuthStep {
     INITIALIZING,
     WAIT_PHONE,
@@ -56,30 +58,61 @@ fun CineflixApp() {
     var currentStep by remember { mutableStateOf(AuthStep.INITIALIZING) }
     val channels = remember { mutableStateListOf<WebChat>() }
     
-    // LOGICA REAL DE TELEGRAM (SIMULADA POR PASOS HASTA RECIBIR EVENTOS DE TDWEB)
+    // Inicialización de TDLib Web
+    val client = remember { 
+        val options = createTdOptions(8952741, "693fb2da124662dad85b2b337c53a386")
+        TdClient(options)
+    }
+
+    // Escuchar actualizaciones de Telegram
     LaunchedEffect(Unit) {
-        delay(1500)
-        currentStep = AuthStep.WAIT_PHONE
+        client.onUpdate = { update ->
+            val type = getTdType(update)
+            if (type == "updateAuthorizationState") {
+                val state = getAuthState(update)
+                when (state) {
+                    "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
+                    "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
+                    "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
+                    "authorizationStateReady" -> currentStep = AuthStep.READY
+                    "authorizationStateWaitTdlibParameters" -> {
+                        val params = createBaseQuery("setTdlibParameters")
+                        addParamToQuery(params, "api_id", "8952741")
+                        addParamToQuery(params, "api_hash", "693fb2da124662dad85b2b337c53a386")
+                        addParamToQuery(params, "use_message_database", "true")
+                        addParamToQuery(params, "use_chat_info_database", "true")
+                        addParamToQuery(params, "use_secret_chats", "true")
+                        addParamToQuery(params, "system_language_code", "es")
+                        addParamToQuery(params, "device_model", "WebBrowser")
+                        addParamToQuery(params, "system_version", "Web")
+                        addParamToQuery(params, "application_version", "1.0")
+                        client.send(params)
+                    }
+                }
+            }
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (currentStep) {
-            AuthStep.INITIALIZING -> LoadingScreen("Iniciando motor TV PLAYER PLUS...")
+            AuthStep.INITIALIZING -> LoadingScreen("Conectando con Telegram...")
             
             AuthStep.WAIT_PHONE -> WebLoginScreen { phone -> 
-                // Aquí se llamaría a TdClient.send(createQuery("setAuthenticationPhoneNumber", ...))
-                currentStep = AuthStep.WAIT_CODE 
+                val query = createBaseQuery("setAuthenticationPhoneNumber")
+                addParamToQuery(query, "phone_number", phone)
+                client.send(query)
             }
             
             AuthStep.WAIT_CODE -> WebCodeScreen { code -> 
-                // Aquí se llamaría a TdClient.send(createQuery("checkAuthenticationCode", ...))
-                // Si la cuenta tiene 2FA, pasaría a WAIT_PASSWORD
-                currentStep = AuthStep.WAIT_PASSWORD
+                val query = createBaseQuery("checkAuthenticationCode")
+                addParamToQuery(query, "code", code)
+                client.send(query)
             }
             
             AuthStep.WAIT_PASSWORD -> WebPasswordScreen { password ->
-                // Aquí se llamaría a TdClient.send(createQuery("checkAuthenticationPassword", ...))
-                currentStep = AuthStep.READY
+                val query = createBaseQuery("checkAuthenticationPassword")
+                addParamToQuery(query, "password", password)
+                client.send(query)
             }
             
             AuthStep.READY -> {
@@ -88,8 +121,7 @@ fun CineflixApp() {
                         channels.addAll(listOf(
                             WebChat(1, "Estrenos Mundiales"),
                             WebChat(2, "Series TV Cine"),
-                            WebChat(3, "Documentales Pro"),
-                            WebChat(4, "Acción Total")
+                            WebChat(3, "Documentales Pro")
                         ))
                     }
                 }
@@ -104,25 +136,17 @@ fun WebPasswordScreen(onPassword: (String) -> Unit) {
     var password by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(modifier = Modifier.width(450.dp).background(Color.Black.copy(alpha = 0.8f)).padding(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Verificación en dos pasos", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text("Introduce tu contraseña de Telegram", color = Color.LightGray, fontSize = 14.sp)
+            Text("Verificación 2FA", fontSize = 28.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation()
+                label = { Text("Contraseña de Telegram") },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = { onPassword(password) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text("Entrar", fontWeight = FontWeight.Bold)
+            Button(onClick = { onPassword(password) }, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))) {
+                Text("Entrar")
             }
         }
     }
@@ -134,23 +158,16 @@ fun WebLoginScreen(onLogin: (String) -> Unit) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(modifier = Modifier.width(450.dp).background(Color.Black.copy(alpha = 0.8f)).padding(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("TV PLAYER PLUS", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFE50914))
-            Spacer(modifier = Modifier.height(10.dp))
-            Text("Ingresa tu teléfono para comenzar", color = Color.White, fontSize = 18.sp)
             Spacer(modifier = Modifier.height(30.dp))
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Número (+34...)") },
+                label = { Text("Teléfono (+34...)") },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(30.dp))
-            Button(
-                onClick = { onLogin(phone) },
-                modifier = Modifier.fillMaxWidth().height(55.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text("Siguiente", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Button(onClick = { onLogin(phone) }, modifier = Modifier.fillMaxWidth().height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))) {
+                Text("Enviar Código SMS", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -161,24 +178,17 @@ fun WebCodeScreen(onCode: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(modifier = Modifier.width(450.dp).background(Color.Black.copy(alpha = 0.8f)).padding(50.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Código SMS", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text("Enviado a tu Telegram o SMS", color = Color.LightGray)
+            Text("Código SMS", fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(30.dp))
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text("Código") },
+                label = { Text("Introduce el código") },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(30.dp))
-            Button(
-                onClick = { onCode(code) },
-                modifier = Modifier.fillMaxWidth().height(55.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text("Verificar", fontWeight = FontWeight.Bold)
+            Button(onClick = { onCode(code) }, modifier = Modifier.fillMaxWidth().height(55.dp), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))) {
+                Text("Verificar")
             }
         }
     }
@@ -188,9 +198,9 @@ fun WebCodeScreen(onCode: (String) -> Unit) {
 fun LoadingScreen(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = Color(0xFFE50914), strokeWidth = 6.dp, modifier = Modifier.size(60.dp))
-            Spacer(modifier = Modifier.height(25.dp))
-            Text(message, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            CircularProgressIndicator(color = Color(0xFFE50914))
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(message, color = Color.White)
         }
     }
 }
@@ -200,9 +210,7 @@ fun MainContent(channels: List<WebChat>) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HeroSection() }
-            item { MovieRow("Continuar viendo en TV PLAYER PLUS", channels) }
-            item { MovieRow("Tendencias mundiales", channels.reversed()) }
-            item { MovieRow("Películas Recomendadas", channels.shuffled()) }
+            item { MovieRow("Contenido de TV PLAYER PLUS", channels) }
         }
         TopNavBar()
     }
@@ -210,50 +218,33 @@ fun MainContent(channels: List<WebChat>) {
 
 @Composable
 fun TopNavBar() {
-    Row(
-        modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Black, Color.Transparent))).padding(horizontal = 60.dp, vertical = 20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Black, Color.Transparent))).padding(horizontal = 60.dp, vertical = 20.dp)) {
         Text("TV PLAYER PLUS", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.width(50.dp))
-        Text("Inicio", color = Color.White, modifier = Modifier.padding(15.dp).clickable {})
-        Text("Series", color = Color.LightGray, modifier = Modifier.padding(15.dp).clickable {})
-        Text("Películas", color = Color.LightGray, modifier = Modifier.padding(15.dp).clickable {})
     }
 }
 
 @Composable
 fun HeroSection() {
-    Box(modifier = Modifier.fillMaxWidth().height(650.dp)) {
+    Box(modifier = Modifier.fillMaxWidth().height(600.dp)) {
         Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xFF141414)))))
-        Column(modifier = Modifier.align(Alignment.BottomStart).padding(start = 60.dp, bottom = 120.dp).widthIn(max = 800.dp)) {
-            Text("Deadpool & Wolverine", color = Color.White, fontSize = 64.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(20.dp))
-            Text("El épico regreso de los héroes más gamberros. Ya disponible en exclusiva en tu plataforma TV PLAYER PLUS.", color = Color.White, fontSize = 22.sp, lineHeight = 30.sp)
-            Spacer(modifier = Modifier.height(40.dp))
-            Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black), shape = RoundedCornerShape(4.dp), modifier = Modifier.height(50.dp).width(150.dp)) {
-                Text("Reproducir", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            }
+        Column(modifier = Modifier.align(Alignment.BottomStart).padding(start = 60.dp, bottom = 100.dp)) {
+            Text("Deadpool & Wolverine", color = Color.White, fontSize = 60.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
 
 @Composable
 fun MovieRow(title: String, channels: List<WebChat>) {
-    Column(modifier = Modifier.padding(vertical = 20.dp)) {
-        Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 60.dp, bottom = 15.dp))
-        LazyRow(contentPadding = PaddingValues(horizontal = 60.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-            items(channels) { chat ->
-                MovieCard(chat)
-            }
-        }
+    Column(modifier = Modifier.padding(20.dp)) {
+        Text(title, color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        LazyRow { items(channels) { MovieCard(it) } }
     }
 }
 
 @Composable
 fun MovieCard(chat: WebChat) {
-    Box(modifier = Modifier.width(300.dp).height(170.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF2F2F2F)).clickable {}) {
-        Text(chat.title, modifier = Modifier.align(Alignment.Center), color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+    Box(modifier = Modifier.width(280.dp).height(160.dp).padding(10.dp).background(Color(0xFF2F2F2F))) {
+        Text(chat.title, modifier = Modifier.align(Alignment.Center), color = Color.White)
     }
 }
 

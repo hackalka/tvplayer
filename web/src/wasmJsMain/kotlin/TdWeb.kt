@@ -1,6 +1,5 @@
 import kotlin.js.JsAny
 
-// Quitamos @JsModule porque ahora se carga de forma global desde el index.html
 external class TdClient(options: JsAny) : JsAny {
     fun send(query: JsAny): JsAny
     var onUpdate: (JsAny) -> Unit
@@ -25,3 +24,6 @@ fun addParamToQuery(query: JsAny, key: String, value: String): JsAny = js("""
         return q;
     })(query, key, value)
 """)
+
+fun getTdType(obj: JsAny): String = js("obj['@type']")
+fun getAuthState(update: JsAny): String = js("update.authorization_state['@type']")
