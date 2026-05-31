@@ -33,7 +33,7 @@ data class WebChat(val id: Int, val title: String)
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    CanvasBasedWindow("TV Cine Web") {
+    CanvasBasedWindow("TV PLAYER PLUS") {
         TvcineWebTheme {
             CineflixApp()
         }
@@ -178,7 +178,7 @@ fun TopNavBar() {
         modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Black, Color.Transparent))).padding(horizontal = 60.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("TV CINE", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+        Text("TV PLAYER PLUS", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.width(50.dp))
         Text("Inicio", color = Color.White, modifier = Modifier.padding(15.dp).clickable {})
         Text("Series", color = Color.LightGray, modifier = Modifier.padding(15.dp).clickable {})
