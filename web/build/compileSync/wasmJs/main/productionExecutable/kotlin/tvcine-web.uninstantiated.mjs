@@ -268,6 +268,9 @@ export async function instantiate(imports={}, runInitializer=true) {
         'androidx.compose.ui.platform.keyCode_$external_prop_setter' : (_this, v) => _this.keyCode = v,
         'androidx.compose.ui.window.force_$external_prop_getter' : (_this) => _this.force,
         'androidx.compose.foundation.text.EventListener' : (handler) => (event) => { handler(event) },
+        'createTdClient' : (options) => new window.tdweb(options),
+        'sendQuery' : (client, query) => client.send(query),
+        'setUpdateHandler' : (client, handler) => client.onUpdate = handler,
         'createTdOptions' : (apiId, apiHash) => 
             ({
                 instanceName: 'tvcine_web',
@@ -285,11 +288,8 @@ export async function instantiate(imports={}, runInitializer=true) {
                 return q;
             })(query, key, value)
         ,
-        'getTdType' : (obj) => obj['@type'],
-        'getAuthState' : (update) => update.authorization_state['@type'],
-        'TdClient_$external_fun' : (p0) => new TdClient(p0),
-        'send_$external_fun' : (_this, p0) => _this.send(p0),
-        'onUpdate_$external_prop_setter' : (_this, v) => _this.onUpdate = v
+        'getTdType' : (obj) => obj && obj['@type'] ? obj['@type'] : '',
+        'getAuthState' : (update) => update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : ''
     }
     
     // Placed here to give access to it from externals (js_code)
