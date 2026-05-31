@@ -28,6 +28,9 @@ enum class AuthStep {
     READY
 }
 
+// Datos de chat simplificados para Web
+data class WebChat(val id: Int, val title: String)
+
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
     CanvasBasedWindow("TV Cine Web") {
@@ -56,33 +59,31 @@ fun CineflixApp() {
     var currentStep by remember { mutableStateOf(AuthStep.INITIALIZING) }
     val channels = remember { mutableStateListOf<WebChat>() }
     
-    // Simulación de transición de estados (En el futuro conectado a TdClient)
     LaunchedEffect(Unit) {
-        // Simulamos que el cliente se inicia y pide teléfono
-        kotlinx.coroutines.delay(2000)
+        // Simulación de carga inicial
+        kotlinx.coroutines.delay(1000)
         currentStep = AuthStep.WAIT_PHONE
     }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         when (currentStep) {
-            AuthStep.INITIALIZING -> LoadingScreen("Iniciando TDLib Web...")
+            AuthStep.INITIALIZING -> LoadingScreen("Iniciando TV Cine...")
             AuthStep.WAIT_PHONE -> WebLoginScreen { phone -> 
-                // Aquí llamaríamos a setAuthenticationPhoneNumber en la web
                 currentStep = AuthStep.WAIT_CODE 
             }
             AuthStep.WAIT_CODE -> WebCodeScreen { code -> 
-                // Aquí llamaríamos a checkAuthenticationCode
                 currentStep = AuthStep.READY
             }
             AuthStep.READY -> {
-                // Carga de canales reales simulada
                 LaunchedEffect(Unit) {
                     if (channels.isEmpty()) {
                         channels.addAll(listOf(
-                            WebChat(1, "Estrenos TV Cine"),
-                            WebChat(2, "Series Acción"),
-                            WebChat(3, "Documentales 4K"),
-                            WebChat(4, "Anime Central")
+                            WebChat(1, "Estrenos"),
+                            WebChat(2, "Series"),
+                            WebChat(3, "Documentales"),
+                            WebChat(4, "Acción"),
+                            WebChat(5, "Terror"),
+                            WebChat(6, "Comedia")
                         ))
                     }
                 }
@@ -98,8 +99,8 @@ fun MainContent(channels: List<WebChat>) {
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HeroSection() }
-            item { MovieRow("Continuar viendo", channels) }
-            item { MovieRow("Tendencias ahora", channels.reversed()) }
+            item { MovieRow("Novedades", channels) }
+            item { MovieRow("Tendencias", channels.reversed()) }
             item { MovieRow("Mi Lista", channels.shuffled()) }
         }
         TopNavBar()
@@ -110,13 +111,13 @@ fun MainContent(channels: List<WebChat>) {
 fun WebLoginScreen(onLogin: (String) -> Unit) {
     var phone by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.width(400.dp).background(Color.Black.copy(alpha = 0.7f)).padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.width(400.dp).background(Color.Black.copy(alpha = 0.5f)).padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Iniciar sesión", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Teléfono (+34...)") },
+                label = { Text("Teléfono") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
             )
@@ -137,13 +138,13 @@ fun WebLoginScreen(onLogin: (String) -> Unit) {
 fun WebCodeScreen(onCode: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.width(400.dp).background(Color.Black.copy(alpha = 0.7f)).padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier = Modifier.width(400.dp).background(Color.Black.copy(alpha = 0.5f)).padding(40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Verificar código", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(24.dp))
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text("Código de Telegram") },
+                label = { Text("Código") },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Color.White, unfocusedTextColor = Color.White)
             )
@@ -166,42 +167,35 @@ fun LoadingScreen(message: String) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator(color = Color(0xFFE50914))
             Spacer(modifier = Modifier.height(20.dp))
-            Text(message, color = Color.White, fontSize = 18.sp)
+            Text(message, color = Color.White)
         }
     }
 }
 
-// Reutilizamos HeroSection, TopNavBar, MovieRow del código anterior pero optimizados para Web
 @Composable
 fun TopNavBar() {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(Color.Black, Color.Transparent)))
-            .padding(horizontal = 60.dp, vertical = 20.dp),
+        modifier = Modifier.fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Black, Color.Transparent))).padding(horizontal = 60.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text("TV CINE", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.width(50.dp))
         Text("Inicio", color = Color.White, modifier = Modifier.padding(15.dp).clickable {})
-        Text("Películas", color = Color.LightGray, modifier = Modifier.padding(15.dp).clickable {})
         Text("Series", color = Color.LightGray, modifier = Modifier.padding(15.dp).clickable {})
     }
 }
 
 @Composable
 fun HeroSection() {
-    Box(modifier = Modifier.fillMaxWidth().height(700.dp)) {
+    Box(modifier = Modifier.fillMaxWidth().height(600.dp)) {
         Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xFF141414)))))
         Column(modifier = Modifier.align(Alignment.BottomStart).padding(start = 60.dp, bottom = 100.dp).widthIn(max = 700.dp)) {
             Text("Deadpool & Wolverine", color = Color.White, fontSize = 60.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(20.dp))
-            Text("El mercenario bocazas se une al mutante más reacio en una misión épica para salvar el multiverso.", color = Color.White, fontSize = 20.sp)
+            Text("El estreno más esperado del año ya disponible en TV Cine.", color = Color.White, fontSize = 20.sp)
             Spacer(modifier = Modifier.height(30.dp))
-            Row {
-                Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black), shape = RoundedCornerShape(4.dp)) {
-                    Text("Reproducir", fontWeight = FontWeight.Bold)
-                }
+            Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black), shape = RoundedCornerShape(4.dp)) {
+                Text("Reproducir", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -209,7 +203,7 @@ fun HeroSection() {
 
 @Composable
 fun MovieRow(title: String, channels: List<WebChat>) {
-    Column(modifier = Modifier.padding(vertical = 20.dp)) {
+    Column(modifier = Modifier.padding(vertical = 15.dp)) {
         Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 60.dp, bottom = 15.dp))
         LazyRow(contentPadding = PaddingValues(horizontal = 60.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(channels) { chat ->
@@ -221,9 +215,7 @@ fun MovieRow(title: String, channels: List<WebChat>) {
 
 @Composable
 fun MovieCard(chat: WebChat) {
-    Box(modifier = Modifier.width(260.dp).height(150.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF2F2F2F)).clickable {}) {
-        Text(chat.title, modifier = Modifier.align(Alignment.Center), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+    Box(modifier = Modifier.width(240.dp).height(135.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFF2F2F2F)).clickable {}) {
+        Text(chat.title, modifier = Modifier.align(Alignment.Center), color = Color.White)
     }
 }
-
-data class WebChat(val id: Int, val title: String)

@@ -1,0 +1,101 @@
+{
+  "version": "9",
+  "items": {
+    "25e5d835c5309e0ace8ba3c0244fd211": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlin\\kotlin-stdlib-wasm-js\\2.2.10\\cb3db09bc118276d85a1450ce2b17b02e0de894b\\kotlin-stdlib-wasm-js-2.2.10.klib"
+    },
+    "79f617cc7c20aca754e61f68d745811c": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.runtime\\runtime-wasm-js\\1.7.1\\3b130097005f6b3360c0021de397f3487778e09c\\runtime-wasm-js-1.7.1.klib"
+    },
+    "0f3255e665ec5751f61856350f575704": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.collection-internal\\collection-wasm-js\\1.7.1\\392a6abb2ae46a78274054a6e0023331c6f1d39\\collection-wasm-js-1.7.1.klib"
+    },
+    "1c6fc0b4d51e510c7517b56b13805943": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\atomicfu-wasm-js\\0.23.2\\f7046e9f5ce6014c3471098284bd654831bb1f41\\atomicfu-wasm-js-0.23.2.klib"
+    },
+    "1c5d7fced3c3b76768b9c8f50cc4237b": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.annotation-internal\\annotation-wasm-js\\1.7.1\\f237e7a67c656621c0c7f5797b3c139b735d1a64\\annotation-wasm-js-1.7.1.klib"
+    },
+    "61108da20006a4cceb8e0b4753db9320": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-coroutines-core-wasm-js\\1.8.0\\6fa5af0c703e4957c811aef817336eb6f6572e72\\kotlinx-coroutines-core-wasm-js-1.8.0.klib"
+    },
+    "6252f9c01cad4fe293be712417254004": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-browser-wasm-js\\0.1\\546fc8fbc296c4b18d2719f869bc483f5fcbc0d9\\kotlinx-browser-wasm-js-0.1-javadoc.klib"
+    },
+    "484e10f5b7ffd9d44effe661283802cd": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-wasm-js\\1.7.1\\51fd50658000aa996c33df829b1db364a842a012\\ui-wasm-js-1.7.1.klib"
+    },
+    "cd440704667853fcdddf55cfce4ef29b": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-runtime-compose-wasm-js\\2.8.4\\8ec0c0686aa7149bbeadf4aa40b5a645a3a74a3b\\lifecycle-runtime-compose-wasm-js-2.8.4.klib"
+    },
+    "55e97ba83b446a3ca8a5930eb36802db": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-runtime-wasm-js\\2.8.4\\3ea93bddfadea0cc538967e1bc7974a48a05d8c3\\lifecycle-runtime-wasm-js-2.8.4.klib"
+    },
+    "8689a5b7cccb7bb5b1a01a59af650a15": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-common-wasm-js\\2.8.4\\934040fc02c41d1c0f9e2d777ba76946f1a19d62\\lifecycle-common-wasm-js-2.8.4.klib"
+    },
+    "121ac75c032c732db4b0e34e81d1530f": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-text-wasm-js\\1.7.1\\54a2b5f2740861426a348314d6c1e781ac9a3118\\ui-text-wasm-js-1.7.1.klib"
+    },
+    "46d89e8cc185e69643d71e2bb69dcf13": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.runtime\\runtime-saveable-wasm-js\\1.7.1\\325e38fe018c352a39a7ef8b9f40be88f269b13d\\runtime-saveable-wasm-js-1.7.1.klib"
+    },
+    "d68796ae3ca836c1034d087eae8fa755": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-graphics-wasm-js\\1.7.1\\4bc259b16b94a4815ff4715e985c39a3f4f3040b\\ui-graphics-wasm-js-1.7.1.klib"
+    },
+    "9e2a35c93ba2d41117917f82927b6c1f": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-unit-wasm-js\\1.7.1\\d1388330032afa41c882ff52ffc47485b63f0bb0\\ui-unit-wasm-js-1.7.1.klib"
+    },
+    "0e8cdf65c2314d38d9260038c2ffb489": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-geometry-wasm-js\\1.7.1\\527b1bca55c5d15b9e8e4ab8640d75bdc56b6420\\ui-geometry-wasm-js-1.7.1.klib"
+    },
+    "55869c082e6aa6fc080c48585b7445b3": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.ui\\ui-util-wasm-js\\1.7.1\\7ad89899e7a467c64565bd7fd634042c266b3365\\ui-util-wasm-js-1.7.1.klib"
+    },
+    "60c48f3ea1efdc220ecca353c3a59adb": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.skiko\\skiko-wasm-js\\0.8.18\\10ee2b383a5338e648b417d5338deb9f98c0c1c\\skiko-wasm-js-0.8.18.klib",
+      "target": "skiko-wasm-js\\0.8.18"
+    },
+    "4f73594a4a4dafe70373af6a047d4abf": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.skiko\\skiko-js-wasm-runtime\\0.8.18\\1a60e4e81541bb430d26ea1547ef5c871218ff03\\skiko-js-wasm-runtime-0.8.18.jar",
+      "target": "skiko-js-wasm-runtime\\0.8.18"
+    },
+    "3ed577424ce1584cefb3209a184baf72": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.androidx.lifecycle\\lifecycle-viewmodel-wasm-js\\2.8.4\\6117540429bb1943258ff47db14c6a338e7b5db3\\lifecycle-viewmodel-wasm-js-2.8.4.klib"
+    },
+    "7361fdde1cd17e70d16c775eeb18d3ef": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.foundation\\foundation-wasm-js\\1.7.1\\528eee78324e0cb0dfbe895dbf2fb36f1350afbf\\foundation-wasm-js-1.7.1.klib"
+    },
+    "ab59cc2ebb61d0119465abaed91c26d9": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.animation\\animation-wasm-js\\1.7.1\\9a28ae47ca670ce9707b8227b84adf37d234b6e9\\animation-wasm-js-1.7.1.klib"
+    },
+    "d4464a4d3d5a1942e2c08feeea233a9b": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.foundation\\foundation-layout-wasm-js\\1.7.1\\f1e42f21726cdd3d6b65f56164030e2c5de5151f\\foundation-layout-wasm-js-1.7.1.klib"
+    },
+    "dbcbd5eb2aad096fa939c8d4a32ca831": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.animation\\animation-core-wasm-js\\1.7.1\\928026491a2e3ba039f674164398aec9cb635508\\animation-core-wasm-js-1.7.1.klib"
+    },
+    "d8f09fe5dfcbdaf6fde4916d046c03ec": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material3\\material3-wasm-js\\1.7.1\\4dd8dc4e4ac9382e1ddcff831a381a2159718e31\\material3-wasm-js-1.7.1.klib"
+    },
+    "064ebeddcf34df6741639550415b7a69": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material\\material-ripple-wasm-js\\1.7.1\\ef47c9fa881eb713f47ef389a507220c9cf7822\\material-ripple-wasm-js-1.7.1.klib"
+    },
+    "f98a74dcc073079c44637fa9f1578b26": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.material\\material-icons-core-wasm-js\\1.7.1\\5ed35811e5ada42b6184935670de617af2dcc235\\material-icons-core-wasm-js-1.7.1.klib"
+    },
+    "a4217dae6633a84e5d55b06f29404f23": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-datetime-wasm-js\\0.6.0\\ef7a9f6a2d3d743418db62508be4ca96760bf85b\\kotlinx-datetime-wasm-js-0.6.0.klib",
+      "target": "Kotlin-DateTime-library-kotlinx-datetime-wasm-js\\0.6.0"
+    },
+    "435e9ef51b2b14ead28ac39aeaee942e": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-serialization-core-wasm-js\\1.7.3\\1badfeaf1bb965ae884394fced75656e42ed98a1\\kotlinx-serialization-core-wasm-js-1.7.3.klib"
+    },
+    "22201fb48b9fe2c7c8244d2838483d42": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.compose.components\\components-resources-wasmJs\\1.7.1\\dc82877c830f3a5d1801a19c990e58053eaa4d76\\library-wasm-js-1.7.1.klib"
+    },
+    "f217bd1b6e4c437e45796dd5a2cee786": {
+      "src": "C:\\Users\\rparr\\.gradle\\caches\\modules-2\\files-2.1\\org.jetbrains.kotlinx\\kotlinx-serialization-json-wasm-js\\1.7.3\\1ced9e7def1e221b5a89bdef4a41f8faef2d9e0c\\kotlinx-serialization-json-wasm-js-1.7.3.klib"
+    }
+  }
+}
