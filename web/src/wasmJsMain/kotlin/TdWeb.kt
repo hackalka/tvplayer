@@ -1,7 +1,17 @@
 import kotlin.js.JsAny
 
-// Usamos funciones globales para evitar problemas con constructores externos en Wasm
-fun createTdClient(options: JsAny): JsAny = js("new window.tdweb(options)")
+fun createTdClient(options: JsAny): JsAny? = js("""
+    try {
+        if (window.tdweb) {
+            return new window.tdweb(options);
+        }
+        console.error('tdweb no encontrado en window');
+        return null;
+    } catch (e) {
+        console.error('Error creando TdClient:', e);
+        return null;
+    }
+""")
 
 fun sendQuery(client: JsAny, query: JsAny): JsAny = js("client.send(query)")
 
@@ -27,5 +37,5 @@ fun addParamToQuery(query: JsAny, key: String, value: String): JsAny = js("""
     })(query, key, value)
 """)
 
-fun getTdType(obj: JsAny): String = js("obj && obj['@type'] ? obj['@type'] : ''")
-fun getAuthState(update: JsAny): String = js("update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : ''")
+fun getTdType(obj: JsAny?): String = js("obj && obj['@type'] ? obj['@type'] : ''")
+fun getAuthState(update: JsAny?): String = js("update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : ''")
