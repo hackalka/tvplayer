@@ -1,6 +1,6 @@
 import kotlin.js.JsAny
 
-@JsModule("tdweb")
+// Quitamos @JsModule porque ahora se carga de forma global desde el index.html
 external class TdClient(options: JsAny) : JsAny {
     fun send(query: JsAny): JsAny
     var onUpdate: (JsAny) -> Unit
@@ -17,10 +17,8 @@ fun createTdOptions(apiId: Int, apiHash: String): JsAny = js("""
     })
 """)
 
-// Versión simplificada para cumplir con las restricciones de Kotlin/Wasm
 fun createBaseQuery(type: String): JsAny = js("""({ '@type': type })""")
 
-// Para añadir parámetros, usaremos una función auxiliar en JS
 fun addParamToQuery(query: JsAny, key: String, value: String): JsAny = js("""
     (function(q, k, v) {
         q[k] = v;

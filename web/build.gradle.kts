@@ -5,13 +5,13 @@ plugins {
 }
 
 kotlin {
-    // Nueva anotación corregida para evitar el error de depreciación
     @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
         browser {
             commonWebpackConfig {
-                // Aquí es donde se define correctamente el nombre del módulo ahora
-                outputFileName = "webApp.js"
+                devServer = (devServer ?: org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig.DevServer()).apply {
+                    port = 8080
+                }
             }
         }
         binaries.executable()
@@ -25,7 +25,6 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(compose.components.resources)
-                // Tu librería de serialización intacta
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             }
         }
