@@ -1,17 +1,6 @@
 import kotlin.js.JsAny
 
-fun createTdClient(options: JsAny): JsAny? = js("""
-    try {
-        if (window.tdweb) {
-            return new window.tdweb(options);
-        }
-        console.error('tdweb no encontrado en window');
-        return null;
-    } catch (e) {
-        console.error('Error creando TdClient:', e);
-        return null;
-    }
-""")
+fun createTdClient(options: JsAny): JsAny? = js("window.createClient(options)")
 
 fun sendQuery(client: JsAny, query: JsAny): JsAny = js("client.send(query)")
 
@@ -37,5 +26,6 @@ fun addParamToQuery(query: JsAny, key: String, value: String): JsAny = js("""
     })(query, key, value)
 """)
 
-fun getTdType(obj: JsAny?): String = js("obj && obj['@type'] ? obj['@type'] : ''")
-fun getAuthState(update: JsAny?): String = js("update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : ''")
+fun getTdType(obj: JsAny?): String = js("window.getTdType(obj)")
+fun getAuthState(update: JsAny?): String = js("window.getAuthState(update)")
+fun hideLoadingStatus(): Unit = js("document.getElementById('status').style.display = 'none'")

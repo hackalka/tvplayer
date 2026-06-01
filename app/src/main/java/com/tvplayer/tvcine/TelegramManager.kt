@@ -16,7 +16,7 @@ class TelegramManager(private val context: Context) {
         try {
             System.loadLibrary("tdjni")
         } catch (e: UnsatisfiedLinkError) {
-            Log.e("TelegramManager", "Native library tdjni not found.", e)
+            Log.e("TelegramManager", "Librería nativa TDLib no cargada", e)
         }
     }
 
@@ -26,16 +26,11 @@ class TelegramManager(private val context: Context) {
                 authorizationState = update.authorizationState
             }
             onUpdate(update)
-        }, { exception ->
-            Log.e("TelegramManager", "Client error", exception)
-        }, { exception ->
-            Log.e("TelegramManager", "Internal error", exception)
-        })
+        }, { Log.e("TelegramManager", "Error: $it") }, { Log.e("TelegramManager", "Internal Error: $it") })
     }
 
     fun setupParameters() {
         val databasePath = File(context.filesDir, "tdlib").absolutePath
-        
         val parameters = TdApi.SetTdlibParameters().apply {
             apiId = TelegramConfig.API_ID
             apiHash = TelegramConfig.API_HASH
@@ -49,47 +44,34 @@ class TelegramManager(private val context: Context) {
             databaseDirectory = databasePath
             useFileDatabase = true
         }
-
-        send(parameters) {
-            Log.d("TelegramManager", "Parameters set: $it")
-        }
+        send(parameters) {}
     }
 
     fun setAuthenticationPhoneNumber(phoneNumber: String) {
-        send(TdApi.SetAuthenticationPhoneNumber(phoneNumber, null)) {
-            Log.d("TelegramManager", "Phone number set: $it")
-        }
+        send(TdApi.SetAuthenticationPhoneNumber(phoneNumber, null)) {}
     }
 
     fun checkAuthenticationCode(code: String) {
-        send(TdApi.CheckAuthenticationCode(code)) {
-            Log.d("TelegramManager", "Code check: $it")
-        }
+        send(TdApi.CheckAuthenticationCode(code)) {}
     }
 
     fun checkAuthenticationPassword(password: String) {
-        send(TdApi.CheckAuthenticationPassword(password)) {
-            Log.d("TelegramManager", "Password check: $it")
-        }
+        send(TdApi.CheckAuthenticationPassword(password)) {}
     }
 
     fun send(query: TdApi.Function<*>, callback: (TdApi.Object) -> Unit) {
         client?.send(query, callback)
     }
 
-    fun getChats(limit: Int = 20, callback: (TdApi.Chats) -> Unit) {
-        send(TdApi.GetChats(TdApi.ChatListMain(), limit)) { result ->
-            if (result is TdApi.Chats) {
-                callback(result)
-            }
+    fun getChats(callback: (TdApi.Chats) -> Unit) {
+        send(TdApi.GetChats(TdApi.ChatListMain(), 30)) { result ->
+            if (result is TdApi.Chats) callback(result)
         }
     }
 
     fun getChat(chatId: Long, callback: (TdApi.Chat) -> Unit) {
         send(TdApi.GetChat(chatId)) { result ->
-            if (result is TdApi.Chat) {
-                callback(result)
-            }
+            if (result is TdApi.Chat) callback(result)
         }
     }
 
@@ -98,7 +80,8 @@ class TelegramManager(private val context: Context) {
     }
 
     fun addGroup(query: String, callback: (TdApi.Chat) -> Unit) {
-        if (query.startsWith("https://t.me/joinchat/") || query.startsWith("https://t.me/+")) {
+        val invitePrefix = "https://t.me/+"
+        if (query.startsWith(invitePrefix) || query.contains("joinchat")) {
             send(TdApi.JoinChatByInviteLink(query)) { result ->
                 if (result is TdApi.Chat) callback(result)
             }
@@ -106,17 +89,19 @@ class TelegramManager(private val context: Context) {
             val username = query.removePrefix("https://t.me/").removePrefix("@")
             send(TdApi.SearchPublicChat(username)) { result ->
                 if (result is TdApi.Chat) {
-                    send(TdApi.JoinChat(result.id)) { joinResult ->
-                        if (joinResult is TdApi.Ok) callback(result)
-                    }
+                    send(TdApi.JoinChat(result.id)) { callback(result) }
                 }
             }
         }
     }
 
+    fun getChatMessages(chatId: Long, limit: Int = 50, callback: (TdApi.Messages) -> Unit) {
+        send(TdApi.GetChatHistory(chatId, 0, 0, limit, false)) { result ->
+            if (result is TdApi.Messages) callback(result)
+        }
+    }
+
     fun stop() {
-        client?.send(TdApi.Close(), {
-            client = null
-        })
+        client?.send(TdApi.Close(), { client = null })
     }
 }

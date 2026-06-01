@@ -4,28 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TV PLAYER PLUS</title>
-    <!-- Cargamos tdweb con prioridad -->
     <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #141414;
-        }
-        #ComposeTarget {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #141414; color: white; font-family: sans-serif; }
+        #ComposeTarget { width: 100vw; height: 100vh; display: block; }
+        #status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
     </style>
 </head>
 <body>
+    <div id="status">
+        <h2 id="status-text">Cargando TV PLAYER PLUS...</h2>
+        <p id="sub-text">Iniciando motor de video</p>
+    </div>
     <canvas id="ComposeTarget"></canvas>
 
-    <!-- El nombre que genera tu proyecto es tvcine-web.js -->
-    <script src="tvcine-web.js"></script>
+    <!-- Cargamos el script con el nombre real: tvcine-web.js -->
+    <script src="tvcine-web.js" onerror="document.getElementById('status-text').innerText='Error: No se encontró tvcine-web.js'"></script>
+
+    <script>
+        // Funciones de ayuda para que el motor Wasm no de errores
+        window.getTdType = function(obj) { return obj && obj['@type'] ? obj['@type'] : ''; };
+        window.getAuthState = function(update) {
+            return update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : '';
+        };
+        window.createClient = function(options) {
+            try { return new window.tdweb(options); } catch(e) { console.error(e); return null; }
+        };
+    </script>
 </body>
 </html>

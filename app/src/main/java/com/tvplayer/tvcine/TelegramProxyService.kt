@@ -6,15 +6,16 @@ import android.os.IBinder
 import android.util.Log
 import fi.iki.elonen.NanoHTTPD
 import org.drinkless.tdlib.TdApi
+import java.io.File
+import java.io.FileInputStream
 import java.io.InputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
-import java.util.concurrent.ConcurrentHashMap
 
 class TelegramProxyService : Service() {
 
     private var server: ProxyServer? = null
+    
     companion object {
+        // Usamos una referencia débil o estática controlada para el manager
         var telegramManager: TelegramManager? = null
     }
 
@@ -23,15 +24,13 @@ class TelegramProxyService : Service() {
         server = ProxyServer(8080)
         try {
             server?.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
-            Log.d("ProxyService", "Servidor HTTP local iniciado en puerto 8080")
+            Log.d("TVCineProxy", "Servidor de Streaming listo en http://localhost:8080")
         } catch (e: Exception) {
-            Log.e("ProxyService", "Error iniciando servidor", e)
+            Log.e("TVCineProxy", "Fallo al arrancar el proxy", e)
         }
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
-    }
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
     override fun onDestroy() {
         server?.stop()
@@ -42,31 +41,41 @@ class TelegramProxyService : Service() {
 
     private inner class ProxyServer(port: Int) : NanoHTTPD(port) {
         override fun serve(session: IHTTPSession): Response {
-            val uri = session.uri
-            if (uri == "/stream") {
+            if (session.uri == "/stream") {
                 val fileId = session.parameters["fileId"]?.firstOrNull()?.toIntOrNull()
-                if (fileId != null && telegramManager != null) {
-                    return handleStream(fileId)
+                if (fileId != null) {
+                    return handleVideoStreaming(fileId)
                 }
             }
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not Found")
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Video no encontrado")
         }
 
-        private fun handleStream(fileId: Int): Response {
-            val pipedOutputStream = PipedOutputStream()
-            val pipedInputStream = PipedInputStream(pipedOutputStream)
-
-            // Iniciamos la descarga/streaming desde TDLib
-            // Nota: TDLib enviará actualizaciones de File que contienen los bytes descargados.
-            // Para un streaming real con NanoHTTPD, necesitamos enganchar el receptor de actualizaciones.
-            // Esta es una implementación simplificada que asume que el manager maneja el pipe.
+        private fun handleVideoStreaming(fileId: Int): Response {
+            // Buscamos el archivo en TDLib
+            // Nota: En una app real, aquí deberíamos esperar a que el archivo tenga una ruta local
+            // Para simplificar y que funcione YA, VLC leerá el archivo directamente cuando TDLib lo marque como local
             
-            telegramManager?.send(TdApi.DownloadFile(fileId, 32, 0, 0, false)) { result ->
-                // En una implementación completa, aquí capturaríamos los chunks
-                // Para este ejemplo, servimos el flujo de datos
+            var localPath: String? = null
+            val lock = java.lang.Object()
+
+            telegramManager?.send(TdApi.GetFile(fileId)) { result ->
+                if (result is TdApi.File) {
+                    localPath = result.local.path
+                }
+                synchronized(lock) { lock.notify() }
             }
 
-            return newChunkedResponse(Response.Status.OK, "video/mp4", pipedInputStream)
+            synchronized(lock) { lock.wait(5000) }
+
+            return if (!localPath.isNullOrEmpty()) {
+                val file = File(localPath!!)
+                val inputStream = FileInputStream(file)
+                newFixedLengthResponse(Response.Status.OK, "video/mp4", inputStream, file.length())
+            } else {
+                // Si no es local aún, forzamos la descarga
+                telegramManager?.downloadFile(fileId, 32)
+                newFixedLengthResponse(Response.Status.ACCEPTED, MIME_PLAINTEXT, "Descargando... Reintenta en unos segundos")
+            }
         }
     }
 }

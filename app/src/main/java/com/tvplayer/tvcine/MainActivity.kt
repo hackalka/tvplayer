@@ -6,18 +6,21 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -32,46 +35,31 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
         telegramManager = TelegramManager(this)
         TelegramProxyService.telegramManager = telegramManager
         startService(Intent(this, TelegramProxyService::class.java))
         
         enableEdgeToEdge()
         setContent {
-            // Forzamos el tema oscuro de Tvcine eliminando dynamicColor para consistencia
             TvcineTheme(dynamicColor = false) {
                 var authState by remember { mutableStateOf<TdApi.AuthorizationState?>(null) }
-                
                 LaunchedEffect(Unit) {
                     telegramManager.start { update ->
-                        if (update is TdApi.UpdateAuthorizationState) {
-                            authState = update.authorizationState
-                        }
+                        if (update is TdApi.UpdateAuthorizationState) authState = update.authorizationState
                     }
                 }
 
-                Surface(color = MaterialTheme.colorScheme.background) {
+                Surface(color = Color.Black, modifier = Modifier.fillMaxSize()) {
                     when (authState) {
                         is TdApi.AuthorizationStateWaitTdlibParameters -> {
                             LaunchedEffect(Unit) { telegramManager.setupParameters() }
                             LoadingScreen("Configurando...")
                         }
-                        is TdApi.AuthorizationStateWaitPhoneNumber -> {
-                            LoginScreen { phone -> telegramManager.setAuthenticationPhoneNumber(phone) }
-                        }
-                        is TdApi.AuthorizationStateWaitCode -> {
-                            CodeScreen { code -> telegramManager.checkAuthenticationCode(code) }
-                        }
-                        is TdApi.AuthorizationStateWaitPassword -> {
-                            PasswordScreen { password -> telegramManager.checkAuthenticationPassword(password) }
-                        }
-                        is TdApi.AuthorizationStateReady -> {
-                            MainScreen(telegramManager)
-                        }
-                        else -> {
-                            LoadingScreen("Iniciando Telegram...")
-                        }
+                        is TdApi.AuthorizationStateWaitPhoneNumber -> LoginScreen { telegramManager.setAuthenticationPhoneNumber(it) }
+                        is TdApi.AuthorizationStateWaitCode -> CodeScreen { telegramManager.checkAuthenticationCode(it) }
+                        is TdApi.AuthorizationStateWaitPassword -> PasswordScreen { telegramManager.checkAuthenticationPassword(it) }
+                        is TdApi.AuthorizationStateReady -> MainScreen(telegramManager)
+                        else -> LoadingScreen("Cargando TV PLAYER PLUS...")
                     }
                 }
             }
@@ -85,12 +73,136 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoadingScreen(message: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = Color(0xFF50A8EB))
+fun MainScreen(manager: TelegramManager) {
+    val movies = remember { mutableStateListOf<TdApi.Message>() }
+    
+    LaunchedEffect(Unit) {
+        // Enlace directo a tu grupo
+        manager.addGroup("https://t.me/+09n25qE5hCA0Yzdk") { chat ->
+            manager.getChatMessages(chat.id) { result ->
+                movies.clear()
+                movies.addAll(result.messages.filter { it.content is TdApi.MessageVideo })
+            }
+        }
+    }
+
+    Scaffold(containerColor = Color.Black) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                item { HeroSection(movies.firstOrNull(), manager) }
+                item { MovieRow("🏆 MUNDIAL 2026", movies, manager) }
+                item { MovieRow("Novedades", movies.reversed(), manager) }
+                item { MovieRow("FAVORITOS", movies.shuffled(), manager) }
+                item { MovieRow("PELICULAS", movies, manager) }
+            }
+            TopBar()
+        }
+    }
+}
+
+@Composable
+fun TopBar() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.9f), Color.Transparent)))
+            .padding(20.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("TV PLAYER PLUS", color = Color(0xFFE50914), fontWeight = FontWeight.ExtraBold, fontSize = 26.sp)
+        Spacer(modifier = Modifier.width(30.dp))
+        Text("INICIO", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.width(20.dp))
+        Text("DEPORTES", color = Color.LightGray, fontSize = 14.sp)
+        Spacer(modifier = Modifier.width(20.dp))
+        Text("PELICULAS", color = Color.LightGray, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun HeroSection(message: TdApi.Message?, manager: TelegramManager) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Box(modifier = Modifier.fillMaxWidth().height(550.dp)) {
+        message?.let {
+            val video = (it.content as? TdApi.MessageVideo)?.video
+            ThumbnailImage(video?.thumbnail?.file, manager, Modifier.fillMaxSize())
+        }
+        Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))))
+        Column(modifier = Modifier.align(Alignment.BottomStart).padding(30.dp)) {
+            Text("PELÍCULA DESTACADA", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)
             Spacer(modifier = Modifier.height(16.dp))
-            Text(message)
+            Button(
+                onClick = {
+                    val video = (message?.content as? TdApi.MessageVideo)?.video
+                    video?.let { v ->
+                        val url = "http://localhost:8080/stream?fileId=${v.video.id}"
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(Uri.parse(url), "video/*")
+                            setPackage("org.videolan.vlc")
+                        }
+                        context.startActivity(intent)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                Text("REPRODUCIR", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun MovieRow(title: String, movies: List<TdApi.Message>, manager: TelegramManager) {
+    Column(modifier = Modifier.padding(vertical = 15.dp)) {
+        Text(title, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 20.dp, bottom = 10.dp))
+        LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            items(movies) { MovieCard(it, manager) }
+        }
+    }
+}
+
+@Composable
+fun MovieCard(message: TdApi.Message, manager: TelegramManager) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val video = (message.content as? TdApi.MessageVideo)?.video
+    Column(modifier = Modifier.width(180.dp).clickable {
+        video?.let { v ->
+            val url = "http://localhost:8080/stream?fileId=${v.video.id}"
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(Uri.parse(url), "video/*")
+                setPackage("org.videolan.vlc")
+            }
+            context.startActivity(intent)
+        }
+    }) {
+        Box(modifier = Modifier.height(260.dp).fillMaxWidth().clip(RoundedCornerShape(4.dp)).background(Color(0xFF1F1F1F))) {
+            ThumbnailImage(video?.thumbnail?.file, manager, Modifier.fillMaxSize())
+        }
+    }
+}
+
+@Composable
+fun ThumbnailImage(file: TdApi.File?, manager: TelegramManager, modifier: Modifier) {
+    var path by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(file) {
+        file?.let {
+            if (it.local.isDownloadingCompleted) path = it.local.path
+            else manager.downloadFile(it.id)
+        }
+    }
+    if (path != null) AsyncImage(model = path, contentDescription = null, modifier = modifier, contentScale = ContentScale.Crop)
+    else Box(modifier = modifier.background(Color(0xFF141414)))
+}
+
+@Composable
+fun LoadingScreen(msg: String) {
+    Box(Modifier.fillMaxSize(), Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = Color(0xFFE50914))
+            Spacer(Modifier.height(16.dp))
+            Text(msg, color = Color.White)
         }
     }
 }
@@ -98,23 +210,14 @@ fun LoadingScreen(message: String) {
 @Composable
 fun LoginScreen(onLogin: (String) -> Unit) {
     var phone by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Ingresa tu número", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = phone,
-                onValueChange = { phone = it },
-                label = { Text("Teléfono (+34...)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onLogin(phone) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF50A8EB))
-            ) {
-                Text("Continuar")
+    Box(Modifier.fillMaxSize().padding(40.dp), Alignment.Center) {
+        Column {
+            Text("TV PLAYER PLUS", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Black)
+            Spacer(modifier = Modifier.height(30.dp))
+            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Teléfono (+34...)") }, modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = { onLogin(phone) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)), shape = RoundedCornerShape(4.dp)) {
+                Text("CONTINUAR", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -123,23 +226,14 @@ fun LoginScreen(onLogin: (String) -> Unit) {
 @Composable
 fun CodeScreen(onCode: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Código de Verificación", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = code,
-                onValueChange = { code = it },
-                label = { Text("Código") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onCode(code) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF50A8EB))
-            ) {
-                Text("Verificar")
+    Box(Modifier.fillMaxSize().padding(40.dp), Alignment.Center) {
+        Column {
+            Text("CÓDIGO SMS", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(30.dp))
+            OutlinedTextField(value = code, onValueChange = { code = it }, label = { Text("Código") }, modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = { onCode(code) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)), shape = RoundedCornerShape(4.dp)) {
+                Text("VERIFICAR", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -147,211 +241,15 @@ fun CodeScreen(onCode: (String) -> Unit) {
 
 @Composable
 fun PasswordScreen(onPassword: (String) -> Unit) {
-    var password by remember { mutableStateOf("") }
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Contraseña 2FA", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text("Tu cuenta tiene activada la verificación en dos pasos.", color = Color.LightGray, fontSize = 14.sp)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { onPassword(password) },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF50A8EB))
-            ) {
-                Text("Confirmar")
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainScreen(manager: TelegramManager) {
-    val chats = remember { mutableStateListOf<TdApi.Chat>() }
-    var showAddGroup by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        manager.getChats { result ->
-            for (chatId in result.chatIds) {
-                manager.getChat(chatId) { chat ->
-                    chats.add(chat)
-                }
-            }
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("TV Cine Telegram") },
-                navigationIcon = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Menu, contentDescription = "Menu")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF242F3D),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddGroup = true },
-                containerColor = Color(0xFF50A8EB),
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Group")
-            }
-        }
-    ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding)) {
-            val context = androidx.compose.ui.platform.LocalContext.current
-            // Ordenar por la posición en la lista principal (order descendente)
-            val sortedChats = chats.sortedByDescending { chat: TdApi.Chat -> 
-                chat.positions.firstOrNull()?.order ?: 0L 
-            }
-            
-            LazyColumn {
-                items(sortedChats) { chat ->
-                    ChannelItem(chat, manager) { fileId ->
-                        val videoUrl = "http://localhost:8080/stream?fileId=$fileId"
-                        val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(Uri.parse(videoUrl), "video/*")
-                            setPackage("org.videolan.vlc")
-                        }
-                        context.startActivity(intent)
-                    }
-                    HorizontalDivider(color = Color(0xFF242F3D), thickness = 0.5.dp)
-                }
-            }
-        }
-
-        if (showAddGroup) {
-            AddGroupDialog(
-                onDismiss = { showAddGroup = false },
-                onAdd = { query ->
-                    manager.addGroup(query) { newChat ->
-                        if (!chats.any { it.id == newChat.id }) {
-                            chats.add(0, newChat)
-                        }
-                        showAddGroup = false
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun AddGroupDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
-    var text by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Añadir Grupo o Canal") },
-        text = {
-            Column {
-                Text("Introduce el enlace o @username")
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
-                    placeholder = { Text("https://t.me/... o @usuario") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onAdd(text) }) { Text("Añadir") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
-        }
-    )
-}
-
-@Composable
-fun ChannelItem(chat: TdApi.Chat, manager: TelegramManager, onVideoClick: (Int) -> Unit) {
-    var photoPath by remember { mutableStateOf<String?>(null) }
-    
-    // Intentar obtener la foto
-    LaunchedEffect(chat.photo) {
-        chat.photo?.small?.let { file ->
-            if (file.local.isDownloadingCompleted) {
-                photoPath = file.local.path
-            } else {
-                manager.downloadFile(file.id)
-            }
-        }
-    }
-
-    // Escuchar actualizaciones de archivos para la foto (esto es simplificado)
-    // En una app real, usaríamos un Flow de actualizaciones de TDLib
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(50.dp),
-            shape = CircleShape,
-            color = Color(0xFF50A8EB)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (photoPath != null) {
-                    AsyncImage(
-                        model = photoPath,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(
-                        text = chat.title.take(1),
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.width(16.dp))
-        
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = chat.title,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                maxLines = 1
-            )
-            // Botón para reproducir si es un canal/grupo con video
-            // Aquí idealmente buscaríamos el último mensaje con video
-            Button(onClick = { 
-                // ID de prueba o buscar el video del chat
-                // onVideoClick(videoFileId) 
-            }) {
-                Text("Reproducir en VLC")
+    var pass by remember { mutableStateOf("") }
+    Box(Modifier.fillMaxSize().padding(40.dp), Alignment.Center) {
+        Column {
+            Text("CONTRASEÑA 2FA", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(30.dp))
+            OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text("Contraseña") }, modifier = Modifier.fillMaxWidth())
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = { onPassword(pass) }, Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)), shape = RoundedCornerShape(4.dp)) {
+                Text("ENTRAR", fontWeight = FontWeight.Bold)
             }
         }
     }
