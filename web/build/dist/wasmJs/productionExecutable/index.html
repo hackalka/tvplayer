@@ -1,34 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TV PLAYER PLUS</title>
     <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #141414; color: white; font-family: sans-serif; }
-        #ComposeTarget { width: 100vw; height: 100vh; display: block; }
-        #status { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
+        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 10; }
+        .cineflix-intro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease-out; }
+        .logo-text { color: #E50914; font-size: 5rem; font-weight: 900; letter-spacing: 10px; text-shadow: 0 0 20px rgba(229, 9, 20, 0.5); }
+        .noir-container { text-align: center; }
+        @keyframes thunder { 0% { opacity: 0; } 10% { opacity: 1; } 11% { opacity: 0; } 15% { opacity: 1; } 25% { opacity: 0; } }
+        .thunder { position: absolute; width: 100%; height: 100%; background: white; opacity: 0; animation: thunder 5s infinite; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div id="status">
-        <h2 id="status-text">Cargando TV PLAYER PLUS...</h2>
-        <p id="sub-text">Iniciando motor de video</p>
+    <div id="cineflix-intro" class="cineflix-intro">
+        <div class="noir-container">
+            <div class="thunder"></div>
+            <h1 id="status-text" class="logo-text">TV PLAYER PLUS</h1>
+            <div id="sub-text" style="color: #aaa; letter-spacing: 5px; font-size: 0.8rem; margin-top: 10px;">NOIR EDITION</div>
+        </div>
     </div>
+
     <canvas id="ComposeTarget"></canvas>
 
-    <!-- Cargamos el script con el nombre real: tvcine-web.js -->
-    <script src="tvcine-web.js" onerror="document.getElementById('status-text').innerText='Error: No se encontró tvcine-web.js'"></script>
+    <!-- CAMBIO CLAVE: Usamos web.js que es el archivo que tienes -->
+    <script src="web.js" onerror="document.getElementById('sub-text').innerText='ERROR: No se encontró web.js'; document.getElementById('sub-text').style.color='red'"></script>
 
     <script>
-        // Funciones de ayuda para que el motor Wasm no de errores
         window.getTdType = function(obj) { return obj && obj['@type'] ? obj['@type'] : ''; };
         window.getAuthState = function(update) {
             return update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : '';
         };
         window.createClient = function(options) {
-            try { return new window.tdweb(options); } catch(e) { console.error(e); return null; }
+            try { return new window.tdweb(options); } catch(e) { return null; }
+        };
+        window.hideIntro = function() {
+            const intro = document.getElementById('cineflix-intro');
+            if (intro) {
+                intro.style.opacity = '0';
+                setTimeout(() => intro.style.display = 'none', 1000);
+            }
         };
     </script>
 </body>
