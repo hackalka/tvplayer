@@ -92,10 +92,10 @@ class TelegramManager(private val context: Context) {
     fun addGroup(query: String, callback: (TdApi.Chat) -> Unit) {
         Log.d("TelegramManager", "Adding group: $query")
         
-        // Extract ID from web link like https://web.telegram.org/a/#-1003749684388
-        if (query.contains("#-")) {
-            val idStr = query.substringAfter("#-")
-            val chatId = "-100$idStr".toLongOrNull() ?: "-$idStr".toLongOrNull()
+        // Extraer ID de links tipo https://web.telegram.org/a/#-1003749684388
+        if (query.contains("#-100")) {
+            val idStr = query.substringAfter("#") // "-1003749684388"
+            val chatId = idStr.toLongOrNull()
             if (chatId != null) {
                 getChat(chatId) { chat ->
                     callback(chat)

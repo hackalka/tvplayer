@@ -141,9 +141,9 @@ fun MainScreen(manager: TelegramManager) {
     var status by remember { mutableStateOf("Conectando con el catálogo...") }
     
     LaunchedEffect(Unit) {
-        // ID extraído de https://web.telegram.org/a/#-1003749684388
-        manager.addGroup("https://web.telegram.org/a/#-1003749684388") { chat ->
-            status = "Cargando contenido de Tv Player+..."
+        // Usamos el ID directo para máxima velocidad
+        manager.getChat(-1003749684388L) { chat ->
+            status = "Cargando catálogo de Tv Player+..."
             manager.getChatMessages(chat.id, 0, 100) { result ->
                 val videoMessages = result.messages.filter { it.content is TdApi.MessageVideo }
                 movies.clear()
@@ -155,7 +155,7 @@ fun MainScreen(manager: TelegramManager) {
                     }
                 }
                 isLoading = false
-                if (movies.isEmpty()) status = "No hay contenido disponible actualmente"
+                if (movies.isEmpty()) status = "No hay contenido disponible"
             }
         }
     }
