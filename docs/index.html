@@ -3,40 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Tv Player+</title>
-    <meta name="description" content="Tu videoclub personal en streaming.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Cargamos TDLib Web directamente -->
-    <script src="https://cdn.jsdelivr.net/npm/tdweb/dist/tdweb.js"></script>
+    <!-- Cargamos una versión específica y estable de TDWeb -->
+    <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: 'Inter', sans-serif; }
-        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s ease; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .logo-text { font-size: 3rem; font-weight: 900; color: #E50914; letter-spacing: -1px; margin: 0; }
-        .subtitle { font-size: 0.9rem; color: #a1a1aa; letter-spacing: 4px; margin-top: 5px; text-transform: uppercase; }
+        .logo { font-size: 2.5rem; font-weight: 900; color: #E50914; margin: 0; letter-spacing: -1px; }
     </style>
 </head>
 <body>
     <div id="loading-screen">
-        <div style="text-align: center;">
-            <div class="spinner"></div>
-            <h1 class="logo-text">Tv Player+</h1>
-            <div class="subtitle">SISTEMA DE STREAMING</div>
-            <p id="status-text" style="margin-top: 20px; color: #71717a;">Iniciando TDLib...</p>
-        </div>
+        <div class="spinner"></div>
+        <h1 class="logo">Tv Player+</h1>
+        <p id="status-text" style="color: #71717a; margin-top: 15px; font-size: 0.9rem;">Iniciando motor de Telegram...</p>
     </div>
 
     <canvas id="ComposeTarget"></canvas>
 
-    <script src="web.js" onerror="console.error('Error al cargar web.js')"></script>
+    <!-- Cargamos el script de la app -->
+    <script src="web.js"></script>
 
     <script>
         window.getTdType = function(obj) { return obj && obj['@type'] ? obj['@type'] : ''; };
@@ -45,29 +35,26 @@
         };
 
         window.createClient = function(options) {
+            console.log('Intentando crear cliente TDWeb...');
             try {
-                // Intentamos encontrar el constructor en diferentes lugares comunes de TDWeb
-                const TdConstructor = window.tdweb || (window.TdWeb && window.TdWeb.TdClient) || window.TdClient;
-
-                if (typeof TdConstructor !== 'function') {
-                    console.error('Constructor de TDWeb no encontrado. window.tdweb es:', typeof window.tdweb);
-                    return null;
+                // El constructor suele estar en window.tdweb o window.TdWeb
+                const Constructor = window.tdweb || window.TdWeb;
+                if (typeof Constructor === 'function' || typeof Constructor === 'object') {
+                    const client = new Constructor(options);
+                    console.log('Cliente creado con éxito');
+                    return client;
                 }
-
-                console.log('Iniciando cliente con:', options);
-                return new TdConstructor(options);
+                console.error('Librería tdweb no encontrada en window');
+                return null;
             } catch(e) {
-                console.error('Fallo al crear cliente TDWeb:', e);
+                console.error('Error fatal al crear cliente:', e);
                 return null;
             }
         };
 
         window.hideLoadingScreen = function() {
-            const loading = document.getElementById('loading-screen');
-            if (loading) {
-                loading.style.opacity = '0';
-                setTimeout(() => { loading.style.display = 'none'; }, 500);
-            }
+            const screen = document.getElementById('loading-screen');
+            if (screen) screen.style.display = 'none';
         };
     </script>
 </body>

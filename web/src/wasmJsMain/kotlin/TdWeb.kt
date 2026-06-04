@@ -10,15 +10,15 @@ fun createTdOptions(apiId: Int, apiHash: String): JsAny = js("""
     ({
         api_id: apiId,
         api_hash: apiHash,
-        instanceName: 'tvplayer_web',
-        readOnly: false,
-        isBackground: false,
-        logVerbosityLevel: 1,
-        jsLogVerbosityLevel: 1,
-        useDatabase: true,
-        useMessageDatabase: true,
-        useChatInfoDatabase: true,
-        useFileDatabase: true
+        use_database: true,
+        use_message_database: true,
+        use_chat_info_database: true,
+        use_file_database: true,
+        use_secret_chats: false,
+        system_language_code: 'es',
+        device_model: 'WebBrowser',
+        system_version: 'Chrome',
+        application_version: '2.1'
     })
 """)
 
@@ -51,20 +51,8 @@ fun hideLoadingScreen(): Unit = js("window.hideLoadingScreen()")
 
 fun loadGroupVideos(client: JsAny, inviteLink: String, limit: Int, handler: (JsAny) -> Unit): Unit = js("""
     (function(client, inviteLink, limit, handler) {
-        function safeSend(query) {
-            try {
-                var result = client.send(query);
-                if (result && typeof result.then === 'function') {
-                    return result;
-                }
-                return Promise.resolve(result);
-            } catch (e) {
-                return Promise.reject(e);
-            }
-        }
-
         function loadHistory(chatId) {
-            return safeSend({
+            client.send({
                 '@type': 'getChatHistory',
                 chat_id: chatId,
                 from_message_id: 0,
@@ -73,44 +61,24 @@ fun loadGroupVideos(client: JsAny, inviteLink: String, limit: Int, handler: (JsA
                 only_local: false
             }).then(function(history) {
                 var messages = history && history.messages ? history.messages : [];
-                var videos = messages
-                    .filter(function(message) {
-                        return message && message.content && message.content['@type'] === 'messageVideo';
-                    })
-                    .map(function(message) {
-                        var video = message.content.video || {};
-                        var file = video.video || {};
-                        var thumbnail = video.thumbnail || {};
-                        var thumbnailFile = thumbnail.file || {};
-                        return {
-                            title: (video.file_name || message.content.caption && message.content.caption.text || 'Tema sin titulo'),
-                            genre: 'Telegram',
-                            posterUrl: thumbnailFile.local && thumbnailFile.local.path ? thumbnailFile.local.path : '',
-                            fileId: file.id || 0
-                        };
-                    });
-                handler({ '@type': 'loadedGroupVideos', videos: videos });
+                handler({ '@type': 'loadedGroupVideos', videos: messages });
+            }).catch(function(err) {
+                handler({ '@type': 'loadGroupVideosError', message: 'Error cargando historial' });
             });
         }
 
-        safeSend({ '@type': 'checkChatInviteLink', invite_link: inviteLink })
+        client.send({ '@type': 'checkChatInviteLink', invite_link: inviteLink })
             .then(function(info) {
-                if (info && info.chat_id) {
-                    return loadHistory(info.chat_id);
-                }
-                return safeSend({ '@type': 'joinChatByInviteLink', invite_link: inviteLink })
+                if (info && info.chat_id) return loadHistory(info.chat_id);
+                return client.send({ '@type': 'joinChatByInviteLink', invite_link: inviteLink })
                     .then(function(chat) {
-                        if (chat && chat.id) {
-                            return loadHistory(chat.id);
-                        }
-                        throw new Error('No se pudo abrir el grupo');
+                        if (chat && chat.id) return loadHistory(chat.id);
+                        handler({ '@type': 'loadGroupVideosError', message: 'No se pudo entrar al grupo' });
                     });
             })
-            .catch(function(error) {
-                handler({
-                    '@type': 'loadGroupVideosError',
-                    message: error && error.message ? error.message : String(error)
-                });
+            .catch(function(err) {
+                // Si falla el link de invitacion, probamos con el ID directo si es posible
+                handler({ '@type': 'loadGroupVideosError', message: err.message || 'Link inválido' });
             });
     })(client, inviteLink, limit, handler)
 """)
@@ -120,17 +88,19 @@ fun videosCount(result: JsAny?): Int = js("""
 """)
 
 fun videoTitle(result: JsAny?, index: Int): String = js("""
-    (result && result.videos && result.videos[index] && result.videos[index].title) ? result.videos[index].title : 'Tema sin titulo'
+    (function() {
+        var msg = result.videos[index];
+        if (msg && msg.content && msg.content.caption && msg.content.caption.text) {
+            return msg.content.caption.text.split('\n')[0];
+        }
+        return 'Video sin título';
+    })()
 """)
 
-fun videoGenre(result: JsAny?, index: Int): String = js("""
-    (result && result.videos && result.videos[index] && result.videos[index].genre) ? result.videos[index].genre : 'Telegram'
-""")
+fun videoGenre(result: JsAny?, index: Int): String = js("'Telegram'")
 
-fun videoPosterUrl(result: JsAny?, index: Int): String = js("""
-    (result && result.videos && result.videos[index] && result.videos[index].posterUrl) ? result.videos[index].posterUrl : ''
-""")
+fun videoPosterUrl(result: JsAny?, index: Int): String = js("''")
 
 fun getErrorMessage(result: JsAny?): String = js("""
-    (result && result.message) ? result.message : 'No se pudieron cargar los temas'
+    (result && result.message) ? result.message : 'Error desconocido'
 """)

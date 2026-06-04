@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.CanvasBasedWindow
 import kotlin.js.JsAny
 
-enum class AuthStep { INITIALIZING, WAIT_PHONE, WAIT_CODE, WAIT_PASSWORD, READY }
+enum class AuthStep { INITIALIZING, WAIT_PHONE, WAIT_CODE, WAIT_PASSWORD, READY, FATAL_ERROR }
 enum class LoadState { IDLE, LOADING, LOADED, ERROR }
 
 data class WebMovie(val title: String, val synopsis: String, val link: String, val posterUrl: String, val fileId: Int)
@@ -60,84 +60,113 @@ fun TvPlayerApp() {
     var loadError by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
+    var fatalErrorMessage by remember { mutableStateOf("") }
     val movies = remember { mutableStateListOf<WebMovie>() }
     var selectedMovie by remember { mutableStateOf<WebMovie?>(null) }
 
     LaunchedEffect(Unit) {
-        hideLoadingScreen()
         try {
             val options = createTdOptions(apiId, apiHash)
             val client = createTdClient(options)
-            if (client != null) {
-                telegramClient = client
-                setUpdateHandler(client) { update ->
-                    val type = getTdType(update)
-                    if (type == "error") {
-                        isProcessing = false
-                        errorMessage = getErrorMessage(update)
-                        return@setUpdateHandler
-                    }
-                    if (type == "updateAuthorizationState") {
-                        val state = getAuthState(update)
-                        errorMessage = null
-                        isProcessing = false
-                        when (state) {
-                            "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
-                            "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
-                            "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
-                            "authorizationStateReady" -> {
-                                currentStep = AuthStep.READY
-                                if (loadState == LoadState.IDLE) {
-                                    loadState = LoadState.LOADING
-                                    loadGroupVideos(client, groupLink, 80) { result ->
-                                        if (getTdType(result) == "loadedGroupVideos") {
-                                            movies.clear()
-                                            val count = videosCount(result)
-                                            for (index in 0 until count) {
-                                                val title = videoTitle(result, index)
-                                                // Simular parsing en web para consistencia
-                                                movies.add(WebMovie(
-                                                    title = title,
-                                                    synopsis = "Sinopsis no disponible en web actualmente.",
-                                                    link = "",
-                                                    posterUrl = videoPosterUrl(result, index),
-                                                    fileId = 0 // fileId logic needs to be in TdWeb.kt
-                                                ))
-                                            }
-                                            loadState = LoadState.LOADED
-                                        } else {
-                                            loadError = getErrorMessage(result)
-                                            loadState = LoadState.ERROR
+            
+            if (client == null) {
+                fatalErrorMessage = "No se pudo conectar con el servidor de Telegram (Librería no cargada)."
+                currentStep = AuthStep.FATAL_ERROR
+                return@LaunchedEffect
+            }
+
+            telegramClient = client
+            setUpdateHandler(client) { update ->
+                val type = getTdType(update)
+                if (type == "error") {
+                    isProcessing = false
+                    errorMessage = getErrorMessage(update)
+                    return@setUpdateHandler
+                }
+                if (type == "updateAuthorizationState") {
+                    val state = getAuthState(update)
+                    errorMessage = null
+                    isProcessing = false
+                    hideLoadingScreen() // Ocultar pantalla de carga HTML cuando Telegram responda
+                    
+                    when (state) {
+                        "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
+                        "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
+                        "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
+                        "authorizationStateReady" -> {
+                            currentStep = AuthStep.READY
+                            if (loadState == LoadState.IDLE) {
+                                loadState = LoadState.LOADING
+                                loadGroupVideos(client, groupLink, 80) { result ->
+                                    if (getTdType(result) == "loadedGroupVideos") {
+                                        movies.clear()
+                                        val count = videosCount(result)
+                                        for (index in 0 until count) {
+                                            movies.add(WebMovie(
+                                                title = videoTitle(result, index),
+                                                synopsis = "Película cargada desde Telegram.",
+                                                link = "",
+                                                posterUrl = videoPosterUrl(result, index),
+                                                fileId = 0
+                                            ))
                                         }
+                                        loadState = LoadState.LOADED
+                                    } else {
+                                        loadError = getErrorMessage(result)
+                                        loadState = LoadState.ERROR
                                     }
                                 }
                             }
-                            "authorizationStateWaitTdlibParameters" -> {
-                                val params = createBaseQuery("setTdlibParameters")
-                                addIntParamToQuery(params, "api_id", apiId)
-                                addParamToQuery(params, "api_hash", apiHash)
-                                addParamToQuery(params, "database_directory", "tdlib")
-                                addParamToQuery(params, "files_directory", "tdlib_files")
-                                addBooleanParamToQuery(params, "use_file_database", true)
-                                addBooleanParamToQuery(params, "use_chat_info_database", true)
-                                addBooleanParamToQuery(params, "use_message_database", true)
-                                addBooleanParamToQuery(params, "use_secret_chats", false)
-                                addParamToQuery(params, "system_language_code", "es")
-                                addParamToQuery(params, "device_model", "WebBrowser")
-                                addParamToQuery(params, "system_version", "Web")
-                                addParamToQuery(params, "application_version", "2.1")
-                                sendQuery(client, params)
-                            }
+                        }
+                        "authorizationStateWaitTdlibParameters" -> {
+                            val params = createBaseQuery("setTdlibParameters")
+                            addIntParamToQuery(params, "api_id", apiId)
+                            addParamToQuery(params, "api_hash", apiHash)
+                            addParamToQuery(params, "database_directory", "tdlib")
+                            addParamToQuery(params, "files_directory", "tdlib_files")
+                            addBooleanParamToQuery(params, "use_file_database", true)
+                            addBooleanParamToQuery(params, "use_chat_info_database", true)
+                            addBooleanParamToQuery(params, "use_message_database", true)
+                            addBooleanParamToQuery(params, "use_secret_chats", false)
+                            addParamToQuery(params, "system_language_code", "es")
+                            addParamToQuery(params, "device_model", "WebBrowser")
+                            addParamToQuery(params, "system_version", "Web")
+                            addParamToQuery(params, "application_version", "2.1")
+                            sendQuery(client, params)
                         }
                     }
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            fatalErrorMessage = "Error interno: ${e.message}"
+            currentStep = AuthStep.FATAL_ERROR
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         when (currentStep) {
-            AuthStep.INITIALIZING -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = Color(0xFFE50914)) }
+            AuthStep.INITIALIZING -> {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color(0xFFE50914))
+                        Spacer(Modifier.height(16.dp))
+                        Text("Conectando...", color = Color.White)
+                    }
+                }
+            }
+            AuthStep.FATAL_ERROR -> {
+                Box(Modifier.fillMaxSize(), Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(40.dp)) {
+                        Text("⚠️ ERROR DE CONEXIÓN", color = Color(0xFFE50914), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(16.dp))
+                        Text(fatalErrorMessage, color = Color.White, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                        Spacer(Modifier.height(24.dp))
+                        Button(onClick = { /* Recargar página */ }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color.Black)) {
+                            Text("REINTENTAR")
+                        }
+                    }
+                }
+            }
             AuthStep.WAIT_PHONE -> WebLoginScreen(errorMessage) { phone ->
                 isProcessing = true
                 telegramClient?.let {
