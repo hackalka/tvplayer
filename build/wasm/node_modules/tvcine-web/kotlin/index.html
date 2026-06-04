@@ -10,7 +10,10 @@
     <meta name="description" content="Tu videoclub personal en streaming.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
+
+    <!-- Cargamos TDLib Web directamente -->
+    <script src="https://cdn.jsdelivr.net/npm/tdweb/dist/tdweb.js"></script>
+
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: 'Inter', sans-serif; }
         #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
@@ -26,8 +29,8 @@
         <div style="text-align: center;">
             <div class="spinner"></div>
             <h1 class="logo-text">Tv Player+</h1>
-            <div class="subtitle">Streaming tvplayer</div>
-            <p id="status-text" style="margin-top: 20px; color: #71717a;">Iniciando sistema de streaming...</p>
+            <div class="subtitle">SISTEMA DE STREAMING</div>
+            <p id="status-text" style="margin-top: 20px; color: #71717a;">Iniciando TDLib...</p>
         </div>
     </div>
 
@@ -40,15 +43,25 @@
         window.getAuthState = function(update) {
             return update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : '';
         };
+
         window.createClient = function(options) {
             try {
-                console.log('Iniciando TdWeb con opciones:', options);
-                return new window.tdweb(options);
+                // Intentamos encontrar el constructor en diferentes lugares comunes de TDWeb
+                const TdConstructor = window.tdweb || (window.TdWeb && window.TdWeb.TdClient) || window.TdClient;
+
+                if (typeof TdConstructor !== 'function') {
+                    console.error('Constructor de TDWeb no encontrado. window.tdweb es:', typeof window.tdweb);
+                    return null;
+                }
+
+                console.log('Iniciando cliente con:', options);
+                return new TdConstructor(options);
             } catch(e) {
-                console.error('Error en TdWeb:', e);
+                console.error('Fallo al crear cliente TDWeb:', e);
                 return null;
             }
         };
+
         window.hideLoadingScreen = function() {
             const loading = document.getElementById('loading-screen');
             if (loading) {

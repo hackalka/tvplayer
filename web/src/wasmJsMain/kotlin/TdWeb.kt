@@ -8,12 +8,17 @@ fun setUpdateHandler(client: JsAny, handler: (JsAny) -> Unit): Unit = js("client
 
 fun createTdOptions(apiId: Int, apiHash: String): JsAny = js("""
     ({
-        instanceName: 'tvcine_web',
+        api_id: apiId,
+        api_hash: apiHash,
+        instanceName: 'tvplayer_web',
         readOnly: false,
         isBackground: false,
         logVerbosityLevel: 1,
         jsLogVerbosityLevel: 1,
-        useDatabase: true
+        useDatabase: true,
+        useMessageDatabase: true,
+        useChatInfoDatabase: true,
+        useFileDatabase: true
     })
 """)
 
