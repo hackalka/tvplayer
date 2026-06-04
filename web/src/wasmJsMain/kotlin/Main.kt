@@ -69,6 +69,14 @@ fun TvPlayerApp() {
                 telegramClient = client
                 setUpdateHandler(client) { update ->
                     val type = getTdType(update)
+                    
+                    // Manejar errores de Telegram
+                    if (type == "error") {
+                        isProcessing = false
+                        errorMessage = getErrorMessage(update)
+                        return@setUpdateHandler
+                    }
+
                     if (type == "updateAuthorizationState") {
                         val state = getAuthState(update)
                         errorMessage = null
@@ -135,13 +143,18 @@ fun TvPlayerApp() {
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         if (isProcessing) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFE50914))
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = Color(0xFFE50914))
+                    Spacer(Modifier.height(16.dp))
+                    Text("Conectando con Telegram...", color = Color.White)
+                }
             }
         } else {
             when (currentStep) {
                 AuthStep.INITIALIZING -> {}
                 AuthStep.WAIT_PHONE -> WebLoginScreen(errorMessage) { phone ->
                     isProcessing = true
+                    errorMessage = null
                     telegramClient?.let {
                         val formattedPhone = if (phone.startsWith("+")) phone else "+$phone"
                         val q = createBaseQuery("setAuthenticationPhoneNumber")
@@ -151,6 +164,7 @@ fun TvPlayerApp() {
                 }
                 AuthStep.WAIT_CODE -> WebCodeScreen(errorMessage) { code ->
                     isProcessing = true
+                    errorMessage = null
                     telegramClient?.let {
                         val q = createBaseQuery("checkAuthenticationCode")
                         addParamToQuery(q, "code", code)
@@ -159,6 +173,7 @@ fun TvPlayerApp() {
                 }
                 AuthStep.WAIT_PASSWORD -> WebPasswordScreen(errorMessage) { pass ->
                     isProcessing = true
+                    errorMessage = null
                     telegramClient?.let {
                         val q = createBaseQuery("checkAuthenticationPassword")
                         addParamToQuery(q, "password", pass)
