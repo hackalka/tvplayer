@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
-import com.tvplayer.tvcine.ui.theme.TvcineTheme
+import com.tvplayer.tvcine.ui.theme.TvPlayerTheme
 import org.drinkless.tdlib.TdApi
 
 class MainActivity : ComponentActivity() {
@@ -48,7 +48,7 @@ class MainActivity : ComponentActivity() {
         startService(Intent(this, TelegramProxyService::class.java))
         enableEdgeToEdge()
         setContent {
-            TvcineTheme(dynamicColor = false) {
+            TvPlayerTheme(dynamicColor = false) {
                 var authState by remember { mutableStateOf<TdApi.AuthorizationState?>(null) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
                 var isProcessing by remember { mutableStateOf(false) }
