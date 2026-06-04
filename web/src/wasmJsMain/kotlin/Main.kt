@@ -49,7 +49,7 @@ fun TvPlayerWebTheme(content: @Composable () -> Unit) {
 fun TvPlayerApp() {
     val apiId = 8952741
     val apiHash = "693fb2da124662dad85b2b337c53a386"
-    val groupLink = "https://web.telegram.org/a/#-1003749684388"
+    val groupLink = "https://t.me/+09n25qE5hCA0Yzdk" // Enlace de invitación estable
 
     var currentStep by remember { mutableStateOf(AuthStep.INITIALIZING) }
     var telegramClient by remember { mutableStateOf<JsAny?>(null) }
@@ -57,46 +57,42 @@ fun TvPlayerApp() {
     var loadError by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isProcessing by remember { mutableStateOf(false) }
+    var debugLog by remember { mutableStateOf("Iniciando TDLib...") }
     val movies = remember { mutableStateListOf<WebMovie>() }
 
     LaunchedEffect(Unit) {
         hideLoadingScreen()
-
         try {
             val options = createTdOptions(apiId, apiHash)
             val client = createTdClient(options)
             if (client != null) {
                 telegramClient = client
+                debugLog = "Cliente creado, esperando estado..."
                 setUpdateHandler(client) { update ->
                     val type = getTdType(update)
+                    debugLog = "Update recibido: $type"
                     
                     if (type == "error") {
                         isProcessing = false
                         errorMessage = getErrorMessage(update)
+                        debugLog = "Error de Telegram: $errorMessage"
                         return@setUpdateHandler
                     }
 
                     if (type == "updateAuthorizationState") {
                         val state = getAuthState(update)
+                        debugLog = "Auth State: $state"
+                        
+                        // Siempre limpiar error y procesamiento al recibir un cambio de estado válido
                         errorMessage = null
-                        // Solo resetear isProcessing si el estado realmente cambia a algo que no sea "procesando"
-                        // o si Telegram nos devuelve un estado que requiere intervención del usuario.
+                        isProcessing = false
+
                         when (state) {
-                            "authorizationStateWaitPhoneNumber" -> {
-                                currentStep = AuthStep.WAIT_PHONE
-                                isProcessing = false
-                            }
-                            "authorizationStateWaitCode" -> {
-                                currentStep = AuthStep.WAIT_CODE
-                                isProcessing = false
-                            }
-                            "authorizationStateWaitPassword" -> {
-                                currentStep = AuthStep.WAIT_PASSWORD
-                                isProcessing = false
-                            }
+                            "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
+                            "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
+                            "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
                             "authorizationStateReady" -> {
                                 currentStep = AuthStep.READY
-                                isProcessing = false
                                 if (loadState == LoadState.IDLE) {
                                     loadState = LoadState.LOADING
                                     loadGroupVideos(client, groupLink, 80) { result ->
@@ -124,7 +120,8 @@ fun TvPlayerApp() {
                                 }
                             }
                             "authorizationStateWaitTdlibParameters" -> {
-                                isProcessing = true
+                                debugLog = "Configurando parámetros..."
+                                isProcessing = true // Mostrar "Conectando" mientras se configuran los parámetros
                                 val params = createBaseQuery("setTdlibParameters")
                                 addIntParamToQuery(params, "api_id", apiId)
                                 addParamToQuery(params, "api_hash", apiHash)
@@ -137,30 +134,36 @@ fun TvPlayerApp() {
                                 addParamToQuery(params, "system_language_code", "es")
                                 addParamToQuery(params, "device_model", "WebBrowser")
                                 addParamToQuery(params, "system_version", "Web")
-                                addParamToQuery(params, "application_version", "1.0")
+                                addParamToQuery(params, "application_version", "2.1")
                                 sendQuery(client, params)
                             }
                         }
                     }
                 }
             } else {
+                debugLog = "Error: No se pudo crear el cliente TDLib"
                 currentStep = AuthStep.WAIT_PHONE
             }
         } catch (e: Exception) {
+            debugLog = "Excepción: ${e.message}"
             currentStep = AuthStep.WAIT_PHONE
         }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (isProcessing && currentStep != AuthStep.READY) {
+        if (currentStep == AuthStep.INITIALIZING || isProcessing) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color(0xFFE50914))
-                    Spacer(Modifier.height(16.dp))
-                    Text("Conectando con Telegram...", color = Color.White)
+                    Spacer(Modifier.height(24.dp))
+                    Text("Conectando con Telegram...", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(8.dp))
+                    Text(debugLog, color = Color.Gray, fontSize = 12.sp)
+                    
                     if (errorMessage != null) {
-                        Text(errorMessage!!, color = Color.Red, modifier = Modifier.padding(top = 10.dp))
-                        Button(onClick = { isProcessing = false }, modifier = Modifier.padding(top = 10.dp)) {
+                        Spacer(Modifier.height(16.dp))
+                        Text(errorMessage!!, color = Color.Red, modifier = Modifier.padding(horizontal = 40.dp))
+                        Button(onClick = { isProcessing = false }, modifier = Modifier.padding(top = 16.dp)) {
                             Text("Reintentar")
                         }
                     }
@@ -168,11 +171,6 @@ fun TvPlayerApp() {
             }
         } else {
             when (currentStep) {
-                AuthStep.INITIALIZING -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFFE50914))
-                    }
-                }
                 AuthStep.WAIT_PHONE -> WebLoginScreen(errorMessage) { phone ->
                     isProcessing = true
                     errorMessage = null
@@ -202,6 +200,7 @@ fun TvPlayerApp() {
                     }
                 }
                 AuthStep.READY -> MainContent(movies, loadState, loadError)
+                else -> {}
             }
         }
     }
@@ -218,8 +217,8 @@ fun MainContent(movies: List<WebMovie>, loadState: LoadState, loadError: String)
                 movies.isEmpty() -> item { LoadingRow("Buscando contenido...") }
                 else -> {
                     item { MovieRow("TENDENCIAS", movies) }
-                    item { MovieRow("RECIÉN AÑADIDAS", movies.reversed()) }
-                    item { MovieRow("MI LISTA", movies.shuffled()) }
+                    item { MovieRow("PELÍCULAS", movies.reversed()) }
+                    item { MovieRow("SERIES", movies.shuffled()) }
                 }
             }
         }
