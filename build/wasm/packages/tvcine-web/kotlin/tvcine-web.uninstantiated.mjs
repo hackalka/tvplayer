@@ -302,7 +302,7 @@ export async function instantiate(imports={}, runInitializer=true) {
         ,
         'getTdType' : (obj) => window.getTdType(obj),
         'getAuthState' : (update) => window.getAuthState(update),
-        'hideIntro' : () => window.hideIntro(),
+        'hideLoadingScreen' : () => window.hideLoadingScreen(),
         'loadGroupVideos' : (client, inviteLink, limit, handler) => 
             (function(client, inviteLink, limit, handler) {
                 function safeSend(query) {

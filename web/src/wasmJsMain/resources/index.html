@@ -3,31 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TV PLAYER PLUS</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Tv Player+</title>
+    <meta name="description" content="Tu videoclub personal en streaming.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
-        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 10; }
-        .cineflix-intro { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; transition: opacity 1s ease-out; }
-        .logo-text { color: #E50914; font-size: 5rem; font-weight: 900; letter-spacing: 10px; text-shadow: 0 0 20px rgba(229, 9, 20, 0.5); }
-        .noir-container { text-align: center; }
-        @keyframes thunder { 0% { opacity: 0; } 10% { opacity: 1; } 11% { opacity: 0; } 15% { opacity: 1; } 25% { opacity: 0; } }
-        .thunder { position: absolute; width: 100%; height: 100%; background: white; opacity: 0; animation: thunder 5s infinite; pointer-events: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: 'Inter', sans-serif; }
+        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
+        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; transition: opacity 0.5s ease; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; margin: 0 auto 24px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .logo-text { font-size: 3rem; font-weight: 900; color: #E50914; letter-spacing: -1px; margin: 0; }
+        .subtitle { font-size: 0.9rem; color: #a1a1aa; letter-spacing: 4px; margin-top: 5px; text-transform: uppercase; }
     </style>
 </head>
 <body>
-    <div id="cineflix-intro" class="cineflix-intro">
-        <div class="noir-container">
-            <div class="thunder"></div>
-            <h1 id="status-text" class="logo-text">TV PLAYER PLUS</h1>
-            <div id="sub-text" style="color: #aaa; letter-spacing: 5px; font-size: 0.8rem; margin-top: 10px;">NOIR EDITION</div>
+    <div id="loading-screen">
+        <div style="text-align: center;">
+            <div class="spinner"></div>
+            <h1 class="logo-text">Tv Player+</h1>
+            <div class="subtitle">Streaming tvplayer</div>
+            <p id="status-text" style="margin-top: 20px; color: #71717a;">Iniciando sistema de streaming...</p>
         </div>
     </div>
 
     <canvas id="ComposeTarget"></canvas>
 
-    <!-- CAMBIO CLAVE: Usamos web.js que es el archivo que tienes -->
-    <script src="web.js" onerror="document.getElementById('sub-text').innerText='ERROR: No se encontró web.js'; document.getElementById('sub-text').style.color='red'"></script>
+    <script src="web.js" onerror="console.error('Error al cargar web.js')"></script>
 
     <script>
         window.getTdType = function(obj) { return obj && obj['@type'] ? obj['@type'] : ''; };
@@ -35,13 +41,19 @@
             return update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : '';
         };
         window.createClient = function(options) {
-            try { return new window.tdweb(options); } catch(e) { return null; }
+            try {
+                console.log('Iniciando TdWeb con opciones:', options);
+                return new window.tdweb(options);
+            } catch(e) {
+                console.error('Error en TdWeb:', e);
+                return null;
+            }
         };
-        window.hideIntro = function() {
-            const intro = document.getElementById('cineflix-intro');
-            if (intro) {
-                intro.style.opacity = '0';
-                setTimeout(() => intro.style.display = 'none', 1000);
+        window.hideLoadingScreen = function() {
+            const loading = document.getElementById('loading-screen');
+            if (loading) {
+                loading.style.opacity = '0';
+                setTimeout(() => { loading.style.display = 'none'; }, 500);
             }
         };
     </script>

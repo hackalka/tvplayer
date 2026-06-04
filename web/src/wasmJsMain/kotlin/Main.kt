@@ -17,23 +17,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.CanvasBasedWindow
-import kotlinx.coroutines.delay
 import kotlin.js.JsAny
 
 enum class AuthStep { INITIALIZING, WAIT_PHONE, WAIT_CODE, WAIT_PASSWORD, READY }
 enum class LoadState { IDLE, LOADING, LOADED, ERROR }
 
-private const val GROUP_INVITE_LINK = "https://t.me/+09n25qE5hCA0Yzdk"
+data class WebMovie(val title: String, val genre: String, val posterUrl: String)
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    CanvasBasedWindow("TV PLAYER PLUS") {
-        TvcineWebTheme { CineflixApp() }
+    CanvasBasedWindow("Tv Player+") {
+        TvPlayerWebTheme { TvPlayerApp() }
     }
 }
 
 @Composable
-fun TvcineWebTheme(content: @Composable () -> Unit) {
+fun TvPlayerWebTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = Color(0xFFE50914),
@@ -47,19 +46,24 @@ fun TvcineWebTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun CineflixApp() {
+fun TvPlayerApp() {
+    val apiId = 8952741
+    val apiHash = "693fb2da124662dad85b2b337c53a386"
+    val groupLink = "https://web.telegram.org/a/#-1003749684388"
+
     var currentStep by remember { mutableStateOf(AuthStep.INITIALIZING) }
     var telegramClient by remember { mutableStateOf<JsAny?>(null) }
     var loadState by remember { mutableStateOf(LoadState.IDLE) }
     var loadError by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isProcessing by remember { mutableStateOf(false) }
     val movies = remember { mutableStateListOf<WebMovie>() }
 
     LaunchedEffect(Unit) {
-        delay(3500)
-        hideIntro()
+        hideLoadingScreen()
 
         try {
-            val options = createTdOptions(8952741, "693fb2da124662dad85b2b337c53a386")
+            val options = createTdOptions(apiId, apiHash)
             val client = createTdClient(options)
             if (client != null) {
                 telegramClient = client
@@ -67,6 +71,8 @@ fun CineflixApp() {
                     val type = getTdType(update)
                     if (type == "updateAuthorizationState") {
                         val state = getAuthState(update)
+                        errorMessage = null
+                        isProcessing = false
                         when (state) {
                             "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
                             "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
@@ -75,7 +81,7 @@ fun CineflixApp() {
                                 currentStep = AuthStep.READY
                                 if (loadState == LoadState.IDLE) {
                                     loadState = LoadState.LOADING
-                                    loadGroupVideos(client, GROUP_INVITE_LINK, 80) { result ->
+                                    loadGroupVideos(client, groupLink, 80) { result ->
                                         when (getTdType(result)) {
                                             "loadedGroupVideos" -> {
                                                 movies.clear()
@@ -101,8 +107,8 @@ fun CineflixApp() {
                             }
                             "authorizationStateWaitTdlibParameters" -> {
                                 val params = createBaseQuery("setTdlibParameters")
-                                addIntParamToQuery(params, "api_id", 8952741)
-                                addParamToQuery(params, "api_hash", "693fb2da124662dad85b2b337c53a386")
+                                addIntParamToQuery(params, "api_id", apiId)
+                                addParamToQuery(params, "api_hash", apiHash)
                                 addParamToQuery(params, "database_directory", "tdlib")
                                 addParamToQuery(params, "files_directory", "tdlib_files")
                                 addBooleanParamToQuery(params, "use_file_database", true)
@@ -127,30 +133,40 @@ fun CineflixApp() {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        when (currentStep) {
-            AuthStep.INITIALIZING -> {}
-            AuthStep.WAIT_PHONE -> WebLoginScreen { phone ->
-                telegramClient?.let {
-                    val q = createBaseQuery("setAuthenticationPhoneNumber")
-                    addParamToQuery(q, "phone_number", phone)
-                    sendQuery(it, q)
-                }
+        if (isProcessing) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFE50914))
             }
-            AuthStep.WAIT_CODE -> WebCodeScreen { code ->
-                telegramClient?.let {
-                    val q = createBaseQuery("checkAuthenticationCode")
-                    addParamToQuery(q, "code", code)
-                    sendQuery(it, q)
+        } else {
+            when (currentStep) {
+                AuthStep.INITIALIZING -> {}
+                AuthStep.WAIT_PHONE -> WebLoginScreen(errorMessage) { phone ->
+                    isProcessing = true
+                    telegramClient?.let {
+                        val formattedPhone = if (phone.startsWith("+")) phone else "+$phone"
+                        val q = createBaseQuery("setAuthenticationPhoneNumber")
+                        addParamToQuery(q, "phone_number", formattedPhone)
+                        sendQuery(it, q)
+                    }
                 }
-            }
-            AuthStep.WAIT_PASSWORD -> WebPasswordScreen { pass ->
-                telegramClient?.let {
-                    val q = createBaseQuery("checkAuthenticationPassword")
-                    addParamToQuery(q, "password", pass)
-                    sendQuery(it, q)
+                AuthStep.WAIT_CODE -> WebCodeScreen(errorMessage) { code ->
+                    isProcessing = true
+                    telegramClient?.let {
+                        val q = createBaseQuery("checkAuthenticationCode")
+                        addParamToQuery(q, "code", code)
+                        sendQuery(it, q)
+                    }
                 }
+                AuthStep.WAIT_PASSWORD -> WebPasswordScreen(errorMessage) { pass ->
+                    isProcessing = true
+                    telegramClient?.let {
+                        val q = createBaseQuery("checkAuthenticationPassword")
+                        addParamToQuery(q, "password", pass)
+                        sendQuery(it, q)
+                    }
+                }
+                AuthStep.READY -> MainContent(movies, loadState, loadError)
             }
-            AuthStep.READY -> MainContent(movies, loadState, loadError)
         }
     }
 }
@@ -161,13 +177,13 @@ fun MainContent(movies: List<WebMovie>, loadState: LoadState, loadError: String)
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HeroSection() }
             when {
-                loadState == LoadState.LOADING -> item { LoadingRow("Cargando temas del grupo...") }
+                loadState == LoadState.LOADING -> item { LoadingRow("Cargando catálogo...") }
                 loadState == LoadState.ERROR -> item { ErrorRow(loadError) }
-                movies.isEmpty() -> item { LoadingRow("No hay videos recientes en el grupo") }
+                movies.isEmpty() -> item { LoadingRow("Buscando contenido...") }
                 else -> {
-                    item { MovieRow("TEMAS DE MI GRUPO", movies) }
-                    item { MovieRow("NOVEDADES", movies.reversed()) }
-                    item { MovieRow("FAVORITOS", movies.shuffled()) }
+                    item { MovieRow("TENDENCIAS", movies) }
+                    item { MovieRow("RECIÉN AÑADIDAS", movies.reversed()) }
+                    item { MovieRow("MI LISTA", movies.shuffled()) }
                 }
             }
         }
@@ -183,10 +199,10 @@ fun WebTopBar() {
             .padding(horizontal = 40.dp, vertical = 20.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text("TV PLAYER PLUS", color = Color(0xFFE50914), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+        Text("Tv Player+", color = Color(0xFFE50914), fontSize = 32.sp, fontWeight = FontWeight.Black)
         Spacer(modifier = Modifier.width(40.dp))
-        Text("INICIO", color = Color.White, modifier = Modifier.padding(10.dp).clickable {})
-        Text("TEMAS", color = Color.LightGray, modifier = Modifier.padding(10.dp).clickable {})
+        Text("INICIO", color = Color.White, modifier = Modifier.padding(10.dp).clickable {}, fontWeight = FontWeight.Bold)
+        Text("PELÍCULAS", color = Color.LightGray, modifier = Modifier.padding(10.dp).clickable {})
         Text("SERIES", color = Color.LightGray, modifier = Modifier.padding(10.dp).clickable {})
     }
 }
@@ -196,8 +212,8 @@ fun HeroSection() {
     Box(modifier = Modifier.fillMaxWidth().height(600.dp)) {
         Box(modifier = Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black))))
         Column(modifier = Modifier.align(Alignment.BottomStart).padding(40.dp)) {
-            Text("Temas de mi grupo", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)
-            Text("Cargados directamente desde Telegram", color = Color.White, fontSize = 18.sp)
+            Text("Tv Player+", color = Color.White, fontSize = 48.sp, fontWeight = FontWeight.Black)
+            Text("Tu videoclub personal en streaming", color = Color.White, fontSize = 18.sp)
         }
     }
 }
@@ -217,7 +233,7 @@ fun LoadingRow(text: String) {
 @Composable
 fun ErrorRow(message: String) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 40.dp, vertical = 24.dp)) {
-        Text("No se pudieron cargar los temas del grupo", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text("Error al cargar contenido", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Text(message, color = Color.LightGray, fontSize = 14.sp)
     }
@@ -242,62 +258,70 @@ fun MovieRow(title: String, movies: List<WebMovie>) {
 @Composable
 fun MovieCard(movie: WebMovie) {
     Box(
-        modifier = Modifier.width(220.dp).height(300.dp).clip(RoundedCornerShape(8.dp))
+        modifier = Modifier.width(220.dp).height(310.dp).clip(RoundedCornerShape(4.dp))
             .background(Color(0xFF1F1F1F)).clickable { }
     ) {
-        Text(movie.title, modifier = Modifier.align(Alignment.Center).padding(16.dp), color = Color.White)
+        Text(movie.title, modifier = Modifier.align(Alignment.BottomStart).padding(16.dp), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
     }
 }
 
 @Composable
-fun WebLoginScreen(onLogin: (String) -> Unit) {
+fun WebLoginScreen(error: String?, onLogin: (String) -> Unit) {
     var phone by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.width(400.dp).background(Color(0xFF141414)).padding(40.dp),
+            modifier = Modifier.width(420.dp).background(Color(0xFF141414)).padding(60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("TV PLAYER PLUS", fontSize = 32.sp, fontWeight = FontWeight.Black, color = Color(0xFFE50914))
-            Spacer(modifier = Modifier.height(24.dp))
+            Text("Tv Player+", fontSize = 48.sp, fontWeight = FontWeight.Black, color = Color(0xFFE50914))
+            Spacer(modifier = Modifier.height(32.dp))
+            if (error != null) {
+                Text(error, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+            }
             OutlinedTextField(
                 value = phone,
                 onValueChange = { phone = it },
-                label = { Text("Telefono (+34...)") },
+                label = { Text("Teléfono (+34...)") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = { onLogin(phone) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))
+                modifier = Modifier.fillMaxWidth().height(55.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
+                shape = RoundedCornerShape(4.dp)
             ) {
-                Text("CONTINUAR", fontWeight = FontWeight.Bold)
+                Text("INICIAR SESIÓN", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
     }
 }
 
 @Composable
-fun WebCodeScreen(onCode: (String) -> Unit) {
+fun WebCodeScreen(error: String?, onCode: (String) -> Unit) {
     var code by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.width(400.dp).background(Color(0xFF141414)).padding(40.dp),
+            modifier = Modifier.width(420.dp).background(Color(0xFF141414)).padding(60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("CODIGO SMS", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(24.dp))
+            Text("CÓDIGO SMS", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(modifier = Modifier.height(32.dp))
+            if (error != null) {
+                Text(error, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+            }
             OutlinedTextField(
                 value = code,
                 onValueChange = { code = it },
-                label = { Text("Codigo de Telegram") },
+                label = { Text("Código de Telegram") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = { onCode(code) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))
+                modifier = Modifier.fillMaxWidth().height(55.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
+                shape = RoundedCornerShape(4.dp)
             ) {
                 Text("VERIFICAR", fontWeight = FontWeight.Bold)
             }
@@ -306,31 +330,33 @@ fun WebCodeScreen(onCode: (String) -> Unit) {
 }
 
 @Composable
-fun WebPasswordScreen(onPassword: (String) -> Unit) {
+fun WebPasswordScreen(error: String?, onPassword: (String) -> Unit) {
     var pass by remember { mutableStateOf("") }
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
-            modifier = Modifier.width(400.dp).background(Color(0xFF141414)).padding(40.dp),
+            modifier = Modifier.width(420.dp).background(Color(0xFF141414)).padding(60.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("CONTRASENA 2FA", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Spacer(modifier = Modifier.height(24.dp))
+            Text("CONTRASEÑA 2FA", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Spacer(modifier = Modifier.height(32.dp))
+            if (error != null) {
+                Text(error, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+            }
             OutlinedTextField(
                 value = pass,
                 onValueChange = { pass = it },
-                label = { Text("Contrasena") },
+                label = { Text("Contraseña") },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = { onPassword(pass) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914))
+                modifier = Modifier.fillMaxWidth().height(55.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE50914)),
+                shape = RoundedCornerShape(4.dp)
             ) {
                 Text("ENTRAR", fontWeight = FontWeight.Bold)
             }
         }
     }
 }
-
-data class WebMovie(val title: String, val genre: String, val posterUrl: String)
