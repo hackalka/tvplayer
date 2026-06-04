@@ -70,7 +70,6 @@ fun TvPlayerApp() {
                 setUpdateHandler(client) { update ->
                     val type = getTdType(update)
                     
-                    // Manejar errores de Telegram
                     if (type == "error") {
                         isProcessing = false
                         errorMessage = getErrorMessage(update)
@@ -80,13 +79,24 @@ fun TvPlayerApp() {
                     if (type == "updateAuthorizationState") {
                         val state = getAuthState(update)
                         errorMessage = null
-                        isProcessing = false
+                        // Solo resetear isProcessing si el estado realmente cambia a algo que no sea "procesando"
+                        // o si Telegram nos devuelve un estado que requiere intervención del usuario.
                         when (state) {
-                            "authorizationStateWaitPhoneNumber" -> currentStep = AuthStep.WAIT_PHONE
-                            "authorizationStateWaitCode" -> currentStep = AuthStep.WAIT_CODE
-                            "authorizationStateWaitPassword" -> currentStep = AuthStep.WAIT_PASSWORD
+                            "authorizationStateWaitPhoneNumber" -> {
+                                currentStep = AuthStep.WAIT_PHONE
+                                isProcessing = false
+                            }
+                            "authorizationStateWaitCode" -> {
+                                currentStep = AuthStep.WAIT_CODE
+                                isProcessing = false
+                            }
+                            "authorizationStateWaitPassword" -> {
+                                currentStep = AuthStep.WAIT_PASSWORD
+                                isProcessing = false
+                            }
                             "authorizationStateReady" -> {
                                 currentStep = AuthStep.READY
+                                isProcessing = false
                                 if (loadState == LoadState.IDLE) {
                                     loadState = LoadState.LOADING
                                     loadGroupVideos(client, groupLink, 80) { result ->
@@ -114,6 +124,7 @@ fun TvPlayerApp() {
                                 }
                             }
                             "authorizationStateWaitTdlibParameters" -> {
+                                isProcessing = true
                                 val params = createBaseQuery("setTdlibParameters")
                                 addIntParamToQuery(params, "api_id", apiId)
                                 addParamToQuery(params, "api_hash", apiHash)
@@ -141,17 +152,27 @@ fun TvPlayerApp() {
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (isProcessing) {
+        if (isProcessing && currentStep != AuthStep.READY) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color(0xFFE50914))
                     Spacer(Modifier.height(16.dp))
                     Text("Conectando con Telegram...", color = Color.White)
+                    if (errorMessage != null) {
+                        Text(errorMessage!!, color = Color.Red, modifier = Modifier.padding(top = 10.dp))
+                        Button(onClick = { isProcessing = false }, modifier = Modifier.padding(top = 10.dp)) {
+                            Text("Reintentar")
+                        }
+                    }
                 }
             }
         } else {
             when (currentStep) {
-                AuthStep.INITIALIZING -> {}
+                AuthStep.INITIALIZING -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color(0xFFE50914))
+                    }
+                }
                 AuthStep.WAIT_PHONE -> WebLoginScreen(errorMessage) { phone ->
                     isProcessing = true
                     errorMessage = null
