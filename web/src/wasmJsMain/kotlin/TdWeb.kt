@@ -48,6 +48,7 @@ fun addBooleanParamToQuery(query: JsAny, key: String, value: Boolean): JsAny = j
 fun getTdType(obj: JsAny?): String = js("window.getTdType(obj)")
 fun getAuthState(update: JsAny?): String = js("window.getAuthState(update)")
 fun hideLoadingScreen(): Unit = js("window.hideLoadingScreen()")
+fun hideBootScreen(): Unit = js("window.hideBootScreen()")
 
 fun loadGroupVideos(client: JsAny, inviteLink: String, limit: Int, handler: (JsAny) -> Unit): Unit = js("""
     (function(client, inviteLink, limit, handler) {

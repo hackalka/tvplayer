@@ -4,46 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tv Player+</title>
+    <!-- Script de Telegram Web con carga diferida controlada -->
     <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 1000; flex-direction: column; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 48px; height: 48px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; }
+        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; }
+        #boot-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 50px; height: 50px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .logo { font-size: 2.5rem; font-weight: 900; color: #E50914; margin-top: 20px; }
+        .logo-txt { font-size: 3rem; font-weight: 900; color: #E50914; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div id="loading-screen">
+    <div id="boot-screen">
         <div class="spinner"></div>
-        <h1 class="logo">Tv Player+</h1>
-        <p id="status-text" style="color: #71717a; margin-top: 15px;">Conectando con servidores...</p>
+        <h1 class="logo-txt">Tv Player+</h1>
+        <p id="boot-status" style="color: #555; margin-top: 10px;">Cargando sistema...</p>
     </div>
+
     <canvas id="ComposeTarget"></canvas>
-    <script src="web.js"></script>
+
+    <script src="web.js" defer></script>
+
     <script>
-        window.getTdType = function(obj) { return obj && obj['@type'] ? obj['@type'] : ''; };
+        // Funciones puente para Kotlin Wasm
+        window.getTdType = function(obj) { return (obj && obj['@type']) ? obj['@type'] : ''; };
         window.getAuthState = function(update) {
-            return update && update.authorization_state && update.authorization_state['@type'] ? update.authorization_state['@type'] : '';
+            return (update && update.authorization_state && update.authorization_state['@type']) ? update.authorization_state['@type'] : '';
         };
+
         window.createClient = function(options) {
-            // Buscador inteligente de constructor
-            const TdClass = window.tdweb || window.TdWeb || (window.TdClient ? window.TdClient.TdClient : null);
+            console.log("Iniciando creación de cliente TDLib...");
+            const TdClass = window.tdweb || window.TdWeb;
             if (!TdClass) {
-                console.error("TDLib no encontrado");
+                console.error("Librería TDWeb no disponible en window");
                 return null;
             }
             try {
                 return new TdClass(options);
-            } catch(e) {
+            } catch (e) {
+                console.error("Error al instanciar TdWeb:", e);
                 return null;
             }
         };
-        window.hideLoadingScreen = function() {
-            const screen = document.getElementById('loading-screen');
-            if (screen) screen.style.opacity = '0';
-            setTimeout(() => { if(screen) screen.style.display = 'none'; }, 500);
+
+        window.hideBootScreen = function() {
+            const el = document.getElementById('boot-screen');
+            if (el) el.style.display = 'none';
         };
+
+        // Fallback para no quedarse bloqueado nunca
+        setTimeout(() => {
+            const status = document.getElementById('boot-status');
+            if (status) status.innerText = "Sincronizando con Telegram...";
+        }, 3000);
     </script>
 </body>
 </html>

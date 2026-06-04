@@ -77,7 +77,7 @@ fun AppShell() {
                     val state = getAuthState(update)
                     error = null
                     loading = false
-                    js("window.hideBootScreen()")
+                    hideBootScreen()
                     
                     when (state) {
                         "authorizationStateWaitPhoneNumber" -> step = AuthStep.PHONE

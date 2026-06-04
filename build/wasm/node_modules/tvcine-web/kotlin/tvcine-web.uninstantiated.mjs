@@ -307,7 +307,7 @@ export async function instantiate(imports={}, runInitializer=true) {
         ,
         'getTdType' : (obj) => window.getTdType(obj),
         'getAuthState' : (update) => window.getAuthState(update),
-        'hideLoadingScreen' : () => window.hideLoadingScreen(),
+        'hideBootScreen' : () => window.hideBootScreen(),
         'loadGroupVideos' : (client, inviteLink, limit, handler) => 
             (function(client, inviteLink, limit, handler) {
                 function loadHistory(chatId) {
