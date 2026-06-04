@@ -91,24 +91,25 @@ class TelegramManager(private val context: Context) {
 
     fun addGroup(query: String, callback: (TdApi.Chat) -> Unit) {
         Log.d("TelegramManager", "Adding group: $query")
-        val invitePrefix = "https://t.me/+"
         
-        // Handle direct IDs or web links with IDs
-        val possibleId = query.substringAfterLast("#").toLongOrNull() ?: query.toLongOrNull()
-        if (possibleId != null) {
-            getChat(possibleId) { chat ->
-                callback(chat)
-                send(TdApi.JoinChat(chat.id)) {}
+        // Extract ID from web link like https://web.telegram.org/a/#-1003749684388
+        if (query.contains("#-")) {
+            val idStr = query.substringAfter("#-")
+            val chatId = "-100$idStr".toLongOrNull() ?: "-$idStr".toLongOrNull()
+            if (chatId != null) {
+                getChat(chatId) { chat ->
+                    callback(chat)
+                    send(TdApi.JoinChat(chat.id)) {}
+                }
+                return
             }
-            return
         }
 
+        val invitePrefix = "https://t.me/+"
         if (query.startsWith(invitePrefix) || query.contains("joinchat")) {
-            // First check the link
             send(TdApi.CheckChatInviteLink(query)) { result ->
                 if (result is TdApi.ChatInviteLinkInfo) {
                     val chatId = result.chatId
-                    Log.d("TelegramManager", "Invite link for chatId: $chatId")
                     if (chatId != 0L) {
                         getChat(chatId) { chat ->
                             callback(chat)
@@ -117,13 +118,11 @@ class TelegramManager(private val context: Context) {
                     } else {
                         send(TdApi.JoinChatByInviteLink(query)) { res ->
                             if (res is TdApi.Chat) callback(res)
-                            else Log.e("TelegramManager", "Failed to join: $res")
                         }
                     }
                 } else {
                     send(TdApi.JoinChatByInviteLink(query)) { res ->
                         if (res is TdApi.Chat) callback(res)
-                        else Log.e("TelegramManager", "Failed join (fallback): $res")
                     }
                 }
             }
@@ -131,9 +130,7 @@ class TelegramManager(private val context: Context) {
             val username = query.removePrefix("https://t.me/").removePrefix("@")
             send(TdApi.SearchPublicChat(username)) { result ->
                 if (result is TdApi.Chat) {
-                    send(TdApi.JoinChat(result.id)) { 
-                        callback(result)
-                    }
+                    send(TdApi.JoinChat(result.id)) { callback(result) }
                 }
             }
         }

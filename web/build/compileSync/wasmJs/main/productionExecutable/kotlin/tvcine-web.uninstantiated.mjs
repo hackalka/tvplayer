@@ -379,9 +379,6 @@ export async function instantiate(imports={}, runInitializer=true) {
         'videoTitle' : (result, index) => 
             (result && result.videos && result.videos[index] && result.videos[index].title) ? result.videos[index].title : 'Tema sin titulo'
         ,
-        'videoGenre' : (result, index) => 
-            (result && result.videos && result.videos[index] && result.videos[index].genre) ? result.videos[index].genre : 'Telegram'
-        ,
         'videoPosterUrl' : (result, index) => 
             (result && result.videos && result.videos[index] && result.videos[index].posterUrl) ? result.videos[index].posterUrl : ''
         ,

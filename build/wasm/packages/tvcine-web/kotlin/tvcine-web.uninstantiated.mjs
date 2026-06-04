@@ -273,12 +273,17 @@ export async function instantiate(imports={}, runInitializer=true) {
         'setUpdateHandler' : (client, handler) => client.onUpdate = handler,
         'createTdOptions' : (apiId, apiHash) => 
             ({
-                instanceName: 'tvcine_web',
+                api_id: apiId,
+                api_hash: apiHash,
+                instanceName: 'tvplayer_web',
                 readOnly: false,
                 isBackground: false,
                 logVerbosityLevel: 1,
                 jsLogVerbosityLevel: 1,
-                useDatabase: true
+                useDatabase: true,
+                useMessageDatabase: true,
+                useChatInfoDatabase: true,
+                useFileDatabase: true
             })
         ,
         'createBaseQuery' : (type) => ({ '@type': type }),
@@ -373,9 +378,6 @@ export async function instantiate(imports={}, runInitializer=true) {
         ,
         'videoTitle' : (result, index) => 
             (result && result.videos && result.videos[index] && result.videos[index].title) ? result.videos[index].title : 'Tema sin titulo'
-        ,
-        'videoGenre' : (result, index) => 
-            (result && result.videos && result.videos[index] && result.videos[index].genre) ? result.videos[index].genre : 'Telegram'
         ,
         'videoPosterUrl' : (result, index) => 
             (result && result.videos && result.videos[index] && result.videos[index].posterUrl) ? result.videos[index].posterUrl : ''
