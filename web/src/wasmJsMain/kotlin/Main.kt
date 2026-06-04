@@ -23,7 +23,6 @@ import androidx.compose.ui.window.CanvasBasedWindow
 import kotlin.js.JsAny
 
 enum class AuthStep { STARTING, PHONE, CODE, PASS, READY, ERROR }
-enum class UIState { IDLE, LOADING, LOADED }
 
 data class MovieModel(val title: String, val desc: String, val poster: String, val id: Int)
 
@@ -59,25 +58,32 @@ fun AppShell() {
     val movies = remember { mutableStateListOf<MovieModel>() }
 
     LaunchedEffect(Unit) {
+        println("WASM: Iniciando AppShell")
         try {
             val options = createTdOptions(apiId, apiHash)
             val c = createTdClient(options)
             if (c == null) {
+                println("WASM: Error al crear cliente")
                 step = AuthStep.ERROR
                 error = "Fallo al cargar la librería de Telegram."
                 return@LaunchedEffect
             }
             client = c
+            println("WASM: Cliente creado, registrando onUpdate")
             setUpdateHandler(c) { update ->
                 val type = getTdType(update)
+                println("WASM: Update recibido: $type")
+                
                 if (type == "error") {
                     loading = false
                     error = getErrorMessage(update)
+                    println("WASM: Error de Telegram: $error")
                 } else if (type == "updateAuthorizationState") {
                     val state = getAuthState(update)
+                    println("WASM: Auth State: $state")
                     error = null
                     loading = false
-                    hideBootScreen()
+                    hideBootScreen() // Función en index.html
                     
                     when (state) {
                         "authorizationStateWaitPhoneNumber" -> step = AuthStep.PHONE
@@ -92,7 +98,7 @@ fun AppShell() {
                                     for (i in 0 until count) {
                                         movies.add(MovieModel(
                                             videoTitle(res, i),
-                                            "Película disponible en Tv Player+",
+                                            "Disponible en Tv Player+",
                                             videoPosterUrl(res, i),
                                             i
                                         ))
@@ -101,6 +107,7 @@ fun AppShell() {
                             }
                         }
                         "authorizationStateWaitTdlibParameters" -> {
+                            println("WASM: Enviando setTdlibParameters")
                             val p = createBaseQuery("setTdlibParameters")
                             addIntParamToQuery(p, "api_id", apiId)
                             addParamToQuery(p, "api_hash", apiHash)
@@ -113,13 +120,14 @@ fun AppShell() {
                             addParamToQuery(p, "system_language_code", "es")
                             addParamToQuery(p, "device_model", "Web")
                             addParamToQuery(p, "system_version", "Web")
-                            addParamToQuery(p, "application_version", "2.5")
+                            addParamToQuery(p, "application_version", "2.6")
                             sendQuery(c, p)
                         }
                     }
                 }
             }
         } catch (e: Exception) {
+            println("WASM: Excepción en AppShell: $e")
             step = AuthStep.ERROR
             error = e.toString()
         }
@@ -146,8 +154,16 @@ fun AppShell() {
                 addParamToQuery(q, "password", it)
                 client?.let { c -> sendQuery(c, q) }
             }
-            AuthStep.ERROR -> Box(Modifier.fillMaxSize(), Alignment.Center) { Text(error ?: "Error fatal", color = Color.Red) }
-            else -> Box(Modifier.fillMaxSize(), Alignment.Center) { CircularProgressIndicator(color = Color(0xFFE50914)) }
+            AuthStep.ERROR -> Box(Modifier.fillMaxSize(), Alignment.Center) { 
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("⚠️ ERROR", color = Color(0xFFE50914), fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Spacer(Modifier.height(10.dp))
+                    Text(error ?: "Error fatal", color = Color.White) 
+                }
+            }
+            else -> Box(Modifier.fillMaxSize(), Alignment.Center) { 
+                CircularProgressIndicator(color = Color(0xFFE50914)) 
+            }
         }
         
         if (loading) {

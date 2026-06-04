@@ -1,8 +1,8 @@
 {
-  "name": "tvcine-web",
+  "name": "TvPlayerPlus-web",
   "version": "0.0.0-unspecified",
-  "main": "tvcine-web.mjs",
-  "types": "tvcine-web.d.ts",
+  "main": "TvPlayerPlus-web.mjs",
+  "types": "TvPlayerPlus-web.d.ts",
   "devDependencies": {
     "webpack": "5.100.2",
     "webpack-cli": "6.0.1",

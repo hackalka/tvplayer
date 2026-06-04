@@ -1,6 +1,6 @@
 {
-	"appId": "com.cineflix.android",
-	"appName": "Cineflix",
+	"appId": "com.tvplayer.plus.android",
+	"appName": "Tv Player+",
 	"webDir": "www",
 	"server": {
 		"url": "https://crono2021.github.io/crono-apps/",

@@ -1,8 +1,8 @@
 {
-  "name": "tvcine-web-test",
+  "name": "TvPlayerPlus-web-test",
   "version": "0.0.0-unspecified",
-  "main": "tvcine-web-test.mjs",
-  "types": "tvcine-web-test.d.ts",
+  "main": "TvPlayerPlus-web-test.mjs",
+  "types": "TvPlayerPlus-web-test.d.ts",
   "devDependencies": {
     "karma": "6.4.4",
     "kotlin-web-helpers": "2.1.0",

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tv Player+</title>
+    <!-- Script de Telegram Web -->
+    <script src="https://cdn.jsdelivr.net/npm/tdweb@1.1.0/dist/tdweb.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; color: white; font-family: sans-serif; }
+        #ComposeTarget { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; }
+        #boot-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); width: 50px; height: 48px; border-radius: 50%; border-left-color: #E50914; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .logo-txt { font-size: 2.5rem; font-weight: 900; color: #E50914; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="boot-screen">
+        <div class="spinner"></div>
+        <h1 class="logo-txt">Tv Player+</h1>
+        <p id="boot-status" style="color: #71717a; margin-top: 15px;">Iniciando motor de Telegram...</p>
+    </div>
+
+    <canvas id="ComposeTarget"></canvas>
+
+    <script src="web.js"></script>
+
+    <script>
+        console.log("INDEX: Script cargado");
+        window.getTdType = function(obj) { return (obj && obj['@type']) ? obj['@type'] : ''; };
+        window.getAuthState = function(update) {
+            return (update && update.authorization_state && update.authorization_state['@type']) ? update.authorization_state['@type'] : '';
+        };
+
+        window.createClient = function(options) {
+            console.log("INDEX: window.createClient llamado con opciones", options);
+            const TdClass = window.tdweb || window.TdWeb;
+            if (!TdClass) {
+                console.error("INDEX: TDLib no encontrado en window.tdweb ni window.TdWeb");
+                document.getElementById('boot-status').innerText = "Error: Librería de Telegram no disponible.";
+                return null;
+            }
+            try {
+                const client = new TdClass(options);
+                console.log("INDEX: Cliente TDLib instanciado");
+                return client;
+            } catch (e) {
+                console.error("INDEX: Error al instanciar TdWeb:", e);
+                document.getElementById('boot-status').innerText = "Error crítico al iniciar motor.";
+                return null;
+            }
+        };
+
+        window.hideBootScreen = function() {
+            console.log("INDEX: Ocultando pantalla de carga");
+            const el = document.getElementById('boot-screen');
+            if (el) el.style.display = 'none';
+        };
+
+        // Si pasan 10 segundos y no ha cargado nada, forzar visibilidad del error
+        setTimeout(() => {
+            if (document.getElementById('boot-screen').style.display !== 'none') {
+                console.warn("INDEX: Tiempo de carga excedido");
+                const status = document.getElementById('boot-status');
+                if (status && status.innerText.includes("Iniciando")) {
+                    status.innerText = "Sincronizando con servidores... (esto puede tardar)";
+                }
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

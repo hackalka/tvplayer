@@ -1,10 +1,10 @@
 {
-  "name": "tvcine",
+  "name": "TvPlayerPlus",
   "version": "unspecified",
   "private": true,
   "workspaces": [
-    "packages\\tvcine-web",
-    "packages\\tvcine-web-test",
+    "packages\\TvPlayerPlus-web",
+    "packages\\TvPlayerPlus-web-test",
     "packages_imported/skiko-wasm-js/0.8.18",
     "packages_imported/skiko-js-wasm-runtime/0.8.18",
     "packages_imported/Kotlin-DateTime-library-kotlinx-datetime-wasm-js/0.6.0"

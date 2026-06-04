@@ -24,6 +24,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "tvcine"
+rootProject.name = "TvPlayerPlus"
 include(":app")
 include(":web")
