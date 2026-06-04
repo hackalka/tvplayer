@@ -20,7 +20,10 @@ class TelegramManager(private val context: Context) {
         }
     }
 
+    private var updateListener: ((TdApi.Object) -> Unit)? = null
+
     fun start(onUpdate: (TdApi.Object) -> Unit) {
+        updateListener = onUpdate
         client = Client.create({ update ->
             if (update is TdApi.UpdateAuthorizationState) {
                 authorizationState = update.authorizationState
